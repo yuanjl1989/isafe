@@ -26,9 +26,11 @@ AppAsset::register($this);
 
 <div class="wrap">
     <?php
+    var_dump(Yii::$app->session['staff_no']);
     NavBar::begin([
-        'brandLabel' => 'My Company',
-        'brandUrl' => Yii::$app->homeUrl,
+        'brandLabel' => 'Meters/bonwe安全扫描平台',
+//        'brandUrl' => Yii::$app->homeUrl,
+        'brandUrl' => ['/'],
         'options' => [
             'class' => 'navbar-inverse navbar-fixed-top',
         ],
@@ -36,20 +38,13 @@ AppAsset::register($this);
     echo Nav::widget([
         'options' => ['class' => 'navbar-nav navbar-right'],
         'items' => [
-            ['label' => 'Home', 'url' => ['/site/index']],
-            ['label' => 'About', 'url' => ['/site/about']],
-            ['label' => 'Contact', 'url' => ['/site/contact']],
-            Yii::$app->user->isGuest ? (
-                ['label' => 'Login', 'url' => ['/site/login']]
+            ['label' => '首页', 'url' => ['/site/index']],
+            ['label' => '新增申请', 'url' => ['/new/new']],
+            ['label' => '列表页', 'url' => ['/list/list']],
+            !Yii::$app->session['staff_no'] ? (
+                ['label' => '登录', 'url' => ['/site/login']]
             ) : (
-                '<li>'
-                . Html::beginForm(['/site/logout'], 'post')
-                . Html::submitButton(
-                    'Logout (' . Yii::$app->user->identity->username . ')',
-                    ['class' => 'btn btn-link']
-                )
-                . Html::endForm()
-                . '</li>'
+                ['label' => '退出 (' . Yii::$app->session['staff_no'] . ')', 'url' => ['/site/logout']]
             )
         ],
     ]);
@@ -66,9 +61,9 @@ AppAsset::register($this);
 
 <footer class="footer">
     <div class="container">
-        <p class="pull-left">&copy; My Company <?= date('Y') ?></p>
+        <p class="pull-left">&copy; Meters/bonwe <?= date('Y') ?></p>
 
-        <p class="pull-right"><?= Yii::powered() ?></p>
+<!--        <p class="pull-right">--><?//= Yii::powered() ?><!--</p>-->
     </div>
 </footer>
 

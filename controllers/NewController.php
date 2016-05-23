@@ -1,0 +1,157 @@
+<?php
+
+namespace app\controllers;
+
+use app\models\SafeExt;
+use Yii;
+use yii\filters\AccessControl;
+use yii\web\Controller;
+use yii\filters\VerbFilter;
+use app\models\NewForm;
+use app\models\SafeList;
+
+class NewController extends Controller
+{
+    public function actions()
+    {
+        return [
+            'error' => [
+                'class' => 'yii\web\ErrorAction',
+            ],
+            'captcha' => [
+                'class' => 'yii\captcha\CaptchaAction',
+                'fixedVerifyCode' => YII_ENV_TEST ? 'testme' : null,
+            ],
+        ];
+    }
+
+    public function actionNew()
+    {
+        if(!Yii::$app->session['staff_no']){
+            Yii::$app->session['url'] = Yii::$app->request->url;
+            return $this->redirect('/site/login');
+        }
+
+        $model = new NewForm();
+        $params = Yii::$app->request->post();
+
+        if (!empty($params))
+        {
+            $safe_id = $this->insertSafeList($params['NewForm']);
+            $params_ext = array('safe_id' => $safe_id,'user_id' => 1,'user_mail'=>'test@mail.com');
+
+            $this->insertSafeExt($params_ext);
+
+            Yii::$app->session->setFlash('newFormSubmitted');
+            Yii::$app->session['safe_id'] = $safe_id;
+
+            return $this->refresh();
+        }
+
+        $model->is_mail = 1;
+
+        return $this->render('new', [
+            'model' => $model,
+        ]);
+    }
+
+    public function actionEdit($id)
+    {
+        if(!Yii::$app->session['staff_no']){
+            Yii::$app->session['url'] = Yii::$app->request->url;
+            return $this->redirect('/site/login');
+        }
+
+        $params = Yii::$app->request->post();
+
+        if (!empty($params))
+        {
+
+            $this->updateSafeList($params['SafeList']);
+
+            Yii::$app->session->setFlash('editFormSubmitted');
+
+            return $this->refresh();
+        }
+
+        $model = $edit_info = SafeList::findOne($id);
+
+        return $this->render('edit', [
+            'model' => $model,
+        ]);
+    }
+
+    public function actionView($id)
+    {
+        $safe_info = $this->getSafeInfo($id);
+
+        return $this->render('view', [
+            'safe_info' => $safe_info,
+        ]);
+    }
+
+
+    public function insertSafeList($params)
+    {
+        $safelist = new SafeList();
+
+        $date = date('Y-m-d H:i:s');
+
+        $safelist->url = $params['url'];
+        $safelist->profile = $params['profile'];
+        $safelist->login_username = $params['login_username'];
+        $safelist->login_password = $params['login_password'];
+        $safelist->mode = $params['mode'];
+        $safelist->is_mail = $params['is_mail'];
+        $safelist->create_at = $date;
+
+        $safelist->save();
+
+        return $safelist->attributes['id'];
+    }
+
+    public function updateSafeList($params)
+    {
+        $safe_info = SafeList::findOne($params['id']);
+        $date = date('Y-m-d H:i:s');
+
+        $safe_info->url = $params['url'];
+        $safe_info->profile = $params['profile'];
+        $safe_info->login_username = $params['login_username'];
+        $safe_info->login_password = $params['login_password'];
+        $safe_info->mode = $params['mode'];
+        $safe_info->is_mail = $params['is_mail'];
+        $safe_info->update_at = $date;
+
+        $safe_info->save();
+    }
+
+    public function insertSafeExt($params)
+    {
+        $safeext = new SafeExt();
+
+        $date = date('Y-m-d H:i:s');
+        $safeext->safe_id = $params['safe_id'];
+        $safeext->user_id = $params['user_id'];
+        $safeext->user_mail = $params['user_mail'];
+        $safeext->create_at = $date;
+
+        $safeext->save();
+    }
+
+    public function getSafeInfo($id)
+    {
+
+        $connection = Yii::$app->db;
+        $sql = "select a.*,c.chinese_name from safe_list a,safe_ext b,`user` c where a.id=b.safe_id and b.user_id=c.id";
+
+        if(!empty($id)){
+            $sql_ext = " and a.id =".$id;
+            $sql = $sql.$sql_ext;
+            $safe_info = $connection->createCommand($sql)->queryAll();
+        }
+
+        return $safe_info?$safe_info:'';
+    }
+
+}

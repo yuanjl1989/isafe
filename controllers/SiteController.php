@@ -7,33 +7,10 @@ use yii\filters\AccessControl;
 use yii\web\Controller;
 use yii\filters\VerbFilter;
 use app\models\LoginForm;
-use app\models\ContactForm;
+use app\models\SafeList;
 
 class SiteController extends Controller
 {
-    public function behaviors()
-    {
-        return [
-            'access' => [
-                'class' => AccessControl::className(),
-                'only' => ['logout'],
-                'rules' => [
-                    [
-                        'actions' => ['logout'],
-                        'allow' => true,
-                        'roles' => ['@'],
-                    ],
-                ],
-            ],
-            'verbs' => [
-                'class' => VerbFilter::className(),
-                'actions' => [
-                    'logout' => ['post'],
-                ],
-            ],
-        ];
-    }
-
     public function actions()
     {
         return [
@@ -54,8 +31,8 @@ class SiteController extends Controller
 
     public function actionLogin()
     {
-        if (!\Yii::$app->user->isGuest) {
-            return $this->goHome();
+        if (Yii::$app->session['staff_no']) {
+            return $this->redirect('/');
         }
 
         $model = new LoginForm();
@@ -69,26 +46,25 @@ class SiteController extends Controller
 
     public function actionLogout()
     {
-        Yii::$app->user->logout();
+        Yii::$app->session->removeAll();
 
-        return $this->goHome();
+        return $this->redirect('/site/login');
     }
 
-    public function actionContact()
+    public function actionCancel($id)
     {
-        $model = new ContactForm();
-        if ($model->load(Yii::$app->request->post()) && $model->contact(Yii::$app->params['adminEmail'])) {
-            Yii::$app->session->setFlash('contactFormSubmitted');
-
-            return $this->refresh();
+        if(!Yii::$app->session['staff_no']){
+            return $this->redirect('/site/login');
         }
-        return $this->render('contact', [
-            'model' => $model,
-        ]);
+
+        $safe_info = SafeList::findOne($id);
+
+        $safe_info->status = 3;
+
+        $suss = $safe_info->save();
+
+        echo $suss?'操作已完成':'操作失败，请稍后再试！';
+
     }
 
-    public function actionAbout()
-    {
-        return $this->render('about');
-    }
 }

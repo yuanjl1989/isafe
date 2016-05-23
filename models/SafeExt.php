@@ -10,18 +10,13 @@ namespace app\models;
 
 use yii\db\ActiveRecord;
 
-class User extends ActiveRecord
+class SafeExt extends ActiveRecord
 {
     /**
      * @return string 返回该AR类关联的数据表名
      */
     public static function tableName()
     {
-        return 'user';
-    }
-
-    public function validatePassword($password)
-    {
-        return $this->password === $password;
+        return 'safe_ext';
     }
 }
