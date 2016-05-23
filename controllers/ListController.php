@@ -8,9 +8,7 @@
 namespace app\controllers;
 
 use Yii;
-use yii\filters\AccessControl;
 use yii\web\Controller;
-use yii\filters\VerbFilter;
 use app\models\SafeList;
 use app\models\SafeExt;
 use app\models\User;
@@ -32,11 +30,9 @@ class ListController extends Controller
         ];
     }
 
-
     public function actionList()
     {
         $params = $p = Yii::$app->request->post();
-
         $status_arr = array(1=>'新建',2=>'进行中',3=>'已取消',4=>'已完成');
 
         if($params){
@@ -52,9 +48,7 @@ class ListController extends Controller
         }
 
         $conditions = $params?$params:array();
-
         $list_info = $this->getListInfo($conditions);
-
 
         return $this->render('list',['list_info'=>$list_info,'status_arr'=>$status_arr,'params'=>$p]);
     }

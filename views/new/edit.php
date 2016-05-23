@@ -13,14 +13,21 @@ $this->params['breadcrumbs'][] = $this->title;
 <div class="site-contact">
     <h1><?= Html::encode($this->title) ?></h1>
 
-    <?php if (Yii::$app->session->hasFlash('editFormSubmitted')): ?>
+    <?php if (Yii::$app->session->hasFlash('editFormSubmitted') || Yii::$app->session->hasFlash('permission')): ?>
+        <?php if (Yii::$app->session->hasFlash('editFormSubmitted')): ?>
 
         <div class="alert alert-success">
             扫描申请编辑成功，结果会在扫描完成后自动生成。你可以在<a href="/new/edit?id=<?=Yii::$app->session['safe_id']?>">编辑页</a>再次修改该申请，也可以进入<a href="/list/list">列表页</a>查看所有添加的申请！
         </div>
 
+        <?php else: ?>
+
+        <div class="alert alert-success">
+            你没有权限编辑该申请，请返回<a href="/list/list">列表页</a>查看其他申请！
+        </div>
+        <?php endif;?>
+
     <?php else: ?>
-        
         <div class="row" style="margin-top: 50px">
             <div class="col-lg-4">
 

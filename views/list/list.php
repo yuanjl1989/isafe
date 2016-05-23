@@ -2,9 +2,9 @@
 
 /* @var $this yii\web\View */
 
-use yii\helpers\Html;
 use app\assets\AppAsset;
-use yii\bootstrap\ActiveForm;
+use app\models\SafeList;
+use app\models\SafeExt;
 
 AppAsset::register($this);
 AppAsset::addScript($this,"/js/list.js");
@@ -67,16 +67,21 @@ $this->params['breadcrumbs'][] = $this->title;
             <td><?=$item['create_at']?></td>
             <td><?=$status_arr[$item['status']]?></td>
             <td>
-                <?php if ($item['status'] == 1):?>
-                    <a href="/new/edit?id=<?=$item['id']?>"><button type="button" class="btn btn-default">编辑</button></a>
-                    &nbsp;&nbsp;&nbsp;&nbsp;
-                    <button type="button" class="btn btn-default" onclick="docancel(<?=$item['id']?>)">取消</button>
-                <?php endif;?>
-                <?php if ($item['status'] == 2):?>
-                    <button type="button" class="btn btn-default" onclick="docancel(<?=$item['id']?>)">中止</button>
-                <?php endif;?>
-                <?php if ($item['status'] == 4):?>
-                    <a href="/new/edit?id=<?=$item['id']?>"><button type="button" class="btn btn-default">下载报告</button></a>
+                <?php
+                    $details = SafeList::findOne($item['id']);
+                    $details_ext = SafeExt::find()->where(['safe_id'=>$details->id])->one();
+                    if($details_ext->user_id == Yii::$app->session['user_id']):?>
+                    <?php if ($item['status'] == 1):?>
+                        <a href="/new/edit?id=<?=$item['id']?>"><button type="button" class="btn btn-default">编辑</button></a>
+                        &nbsp;&nbsp;&nbsp;&nbsp;
+                        <button type="button" class="btn btn-default" onclick="docancel(<?=$item['id']?>)">取消</button>
+                    <?php endif;?>
+                    <?php if ($item['status'] == 2):?>
+                        <button type="button" class="btn btn-default" onclick="docancel(<?=$item['id']?>)">中止</button>
+                    <?php endif;?>
+                    <?php if ($item['status'] == 4):?>
+                        <a href="/new/edit?id=<?=$item['id']?>"><button type="button" class="btn btn-default">下载报告</button></a>
+                    <?php endif;?>
                 <?php endif;?>
             </td>
         </tr>

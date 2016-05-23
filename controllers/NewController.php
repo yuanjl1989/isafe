@@ -4,9 +4,7 @@ namespace app\controllers;
 
 use app\models\SafeExt;
 use Yii;
-use yii\filters\AccessControl;
 use yii\web\Controller;
-use yii\filters\VerbFilter;
 use app\models\NewForm;
 use app\models\SafeList;
 
@@ -38,10 +36,8 @@ class NewController extends Controller
         if (!empty($params))
         {
             $safe_id = $this->insertSafeList($params['NewForm']);
-            $params_ext = array('safe_id' => $safe_id,'user_id' => 1,'user_mail'=>'test@mail.com');
-
+            $params_ext = array('safe_id' => $safe_id,'user_id' => Yii::$app->session['user_id'],'user_mail'=> Yii::$app->session['email']);
             $this->insertSafeExt($params_ext);
-
             Yii::$app->session->setFlash('newFormSubmitted');
             Yii::$app->session['safe_id'] = $safe_id;
 
@@ -62,15 +58,20 @@ class NewController extends Controller
             return $this->redirect('/site/login');
         }
 
+        $details = SafeList::findOne($id);
+        $details_ext = SafeExt::find()->where(['safe_id'=>$details->id])->one();
+
+        if($details_ext->user_id != Yii::$app->session['user_id'])
+        {
+            Yii::$app->session->setFlash('permission');
+        }
+
         $params = Yii::$app->request->post();
 
         if (!empty($params))
         {
-
             $this->updateSafeList($params['SafeList']);
-
             Yii::$app->session->setFlash('editFormSubmitted');
-
             return $this->refresh();
         }
 

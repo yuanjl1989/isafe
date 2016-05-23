@@ -3,11 +3,10 @@
 namespace app\controllers;
 
 use Yii;
-use yii\filters\AccessControl;
 use yii\web\Controller;
-use yii\filters\VerbFilter;
 use app\models\LoginForm;
 use app\models\SafeList;
+use app\models\SafeExt;
 
 class SiteController extends Controller
 {
@@ -58,13 +57,18 @@ class SiteController extends Controller
         }
 
         $safe_info = SafeList::findOne($id);
+        $details_ext = SafeExt::find()->where(['safe_id'=>$safe_info->id])->one();
 
-        $safe_info->status = 3;
-
-        $suss = $safe_info->save();
-
-        echo $suss?'操作已完成':'操作失败，请稍后再试！';
-
+        if($details_ext->user_id != Yii::$app->session['user_id'])
+        {
+            echo '你没有权限进行该操作！';
+        }
+        else
+        {
+            $safe_info->status = 3;
+            $suss = $safe_info->save();
+            echo $suss?'操作已完成':'操作失败，请稍后再试！';
+        }
     }
 
 }

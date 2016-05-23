@@ -60,6 +60,7 @@ class LoginForm extends Model
         if ($this->validate()) {
             Yii::$app->session['staff_no'] = $user_info['staff_no'];
             Yii::$app->session['user_id'] = $user_info['id'];
+            Yii::$app->session['email'] = $user_info['email'];
             if(Yii::$app->session['url']){
                 Header("Location: ".Yii::$app->session['url']);
             }else{
