@@ -26,7 +26,6 @@ AppAsset::register($this);
 
 <div class="wrap">
     <?php
-    var_dump(Yii::$app->session['staff_no']);
     NavBar::begin([
         'brandLabel' => 'Meters/bonwe安全扫描平台',
 //        'brandUrl' => Yii::$app->homeUrl,

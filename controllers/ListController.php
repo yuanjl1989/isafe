@@ -32,8 +32,10 @@ class ListController extends Controller
 
     public function actionList()
     {
-        $params = $p = Yii::$app->request->post();
+        $params = $p = Yii::$app->request->get();
+
         $status_arr = array(1=>'新建',2=>'进行中',3=>'已取消',4=>'已完成');
+        $page_size = 10;
 
         if($params){
             if(key_exists('status_1',$params) || key_exists('status_2',$params) || key_exists('status_3',$params) || key_exists('status_4',$params)){
@@ -47,13 +49,14 @@ class ListController extends Controller
             }
         }
 
-        $conditions = $params?$params:array();
-        $list_info = $this->getListInfo($conditions);
+        $list_info = $this->getListInfo($params,isset($params['page'])?$params['page']:1,$page_size);
 
-        return $this->render('list',['list_info'=>$list_info,'status_arr'=>$status_arr,'params'=>$p]);
+        $pages=ceil($list_info['row_num']/$page_size);
+
+        return $this->render('list',['list_info'=>$list_info['list_info'],'status_arr'=>$status_arr,'params'=>$p,'pages'=>$pages>1?$pages:1,'page'=>isset($params['page'])?$params['page']:1]);
     }
 
-    public function getListInfo($conditions = array(),$id=0)
+    public function getListInfo($conditions = array(),$page = 1,$page_size = 15)
     {
         if(!empty($conditions['username']) && empty($conditions['status']))
         {
@@ -113,26 +116,23 @@ class ListController extends Controller
 
         $connection = Yii::$app->db;
         $sql = "select a.*,c.chinese_name from safe_list a,safe_ext b,`user` c where a.id=b.safe_id and b.user_id=c.id";
+        $offset = ($page-1)*$page_size;
 
         if(isset($safe_ids)){
             if(!empty($safe_ids)){
                 $sql_ext = " and a.id in (".$safe_ids.")";
                 $sql = $sql.$sql_ext;
-                $list_info = $connection->createCommand($sql." order by a.id desc")->queryAll();
+                $row_num = count($connection->createCommand($sql)->queryAll());
+                $list_info = $connection->createCommand("$sql order by a.id desc limit $offset,$page_size")->queryAll();
             }else{
-                $list_info = $connection->createCommand($sql." order by a.id desc")->queryAll();
+                $row_num = count($connection->createCommand($sql)->queryAll());
+                $list_info = $connection->createCommand("$sql order by a.id desc limit $offset,$page_size")->queryAll();
             }
         }else{
+            $row_num = 0;
             $list_info = array();
         }
 
-        if(!empty($id)){
-            $sql_ext = " and a.id =".$safe_ids;
-            $sql = $sql.$sql_ext;
-            $list_info = $connection->createCommand($sql." order by a.id desc")->queryAll();
-        }
-
-        return $list_info;
+        return ['row_num'=>$row_num,'list_info'=>$list_info];
     }
-
 }

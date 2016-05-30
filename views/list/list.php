@@ -13,7 +13,7 @@ $this->title = '申请列表';
 $this->params['breadcrumbs'][] = $this->title;
 ?>
 
-<form class="form-horizontal" action="/list/list" method="post">
+<form class="form-horizontal" action="/list/list" method="get">
 
     <div class="form-group">
         <label class="col-lg-1 control-label" for="formGroupInputSmall">申请人</label>
@@ -60,7 +60,7 @@ $this->params['breadcrumbs'][] = $this->title;
     <tbody>
         <?php if(!empty($list_info) && is_array($list_info)):?>
             <?php foreach ($list_info as $key => $item):?>
-        <tr>
+        <tr style="height: 45px;">
             <td><?=$item['id']?></td>
             <td><?=$item['url']?> | <a href="/new/view?id=<?=$item['id']?>">查看详情</a> </td>
             <td><?=$item['chinese_name']?></td>
@@ -80,7 +80,7 @@ $this->params['breadcrumbs'][] = $this->title;
                         <button type="button" class="btn btn-default" onclick="docancel(<?=$item['id']?>)">中止</button>
                     <?php endif;?>
                     <?php if ($item['status'] == 4):?>
-                        <a href="/new/edit?id=<?=$item['id']?>"><button type="button" class="btn btn-default">下载报告</button></a>
+                        <a href="/scanreport/result_<?=$item['id']?>/report.pdf"><button type="button" class="btn btn-default">下载报告</button></a>
                     <?php endif;?>
                 <?php endif;?>
             </td>
@@ -91,18 +91,31 @@ $this->params['breadcrumbs'][] = $this->title;
 
 </table>
 
-<div style="text-align: center">
-    <ul class="pagination">
-        <li><a href="#">&laquo;</a></li>
-        <li class="active"><a href="#">1</a></li>
-        <li><a href="#">2</a></li>
-        <li><a href="#">3</a></li>
-        <li><a href="#">4</a></li>
-        <li><a href="#">5</a></li>
-        <li><a href="#">&raquo;</a></li>
-    </ul>
-</div>
+<?php
 
+    $params_str = '';
+    $queryParams = Yii::$app->request->getQueryParams();
+    unset($queryParams['s']);
+    unset($queryParams['page']);
 
-<!--    <code>--><?//= __FILE__ ?><!--</code>-->
+    if(!empty($queryParams)){
+        foreach ($queryParams as $k => $v){
+            $params_arr[] = "$k=$v";
+        }
+        $params_str = implode('&',$params_arr);
+    };
 
+    if(!empty($params_str)){
+        $url = '/list/list?'.$params_str.'&page=';
+    }else{
+        $url = '/list/list?page=';
+    }
+
+    echo "<div align='center'>共有".$pages."页(".$page."/".$pages.")&nbsp;&nbsp;&nbsp;";
+    for ($i=1;$i< $page;$i++)
+        echo "<a href='".$url.$i."'>[".$i ."]</a> ";
+        echo "[".$page."] ";
+    for ($j=$page+1;$j<=$pages;$j++)
+        echo "<a href='".$url.$j."'>[".$j ."]</a> ";
+        echo "</div>";
+?>
