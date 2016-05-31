@@ -42,14 +42,27 @@ class ScanController extends Controller
             $succ = $items->save();
 
             $safe_info_ext = SafeExt::find()->where(['safe_id'=>$v['id']])->asArray()->one();
+            $report_path = "E:\\yii\\web\\scanreport\\result_{$v['id']}";
 
             if ($succ) {
                 //根据页面配置中填写的信息，拼接成扫描命令，--abortscanafter=600该参数作用为：扫描超过10个小时则终止，避免出现假死
-                if($items->is_mail == 2){
-                    $command = "{$wvs_console} /Scan {$v['url']} /Profile {$scan_profile[$v['profile']]} /Save /GenerateReport /ReportFormat PDF /SaveFolder E:\\yii\\web\\scanreport\\result_{$v['id']} --ScanningMode={$scan_mode[$v['mode']]} --HtmlAuthUser={$v['login_username']} --HtmlAuthPass={$v['login_password']} --abortscanafter=600";
+                $command_main = "{$wvs_console} /Scan {$v['url']} /Profile {$scan_profile[$v['profile']]} /Save /GenerateReport /ReportFormat PDF /SaveFolder ".$report_path;
+                $command_mail = " /EmailAddress {$safe_info_ext['user_mail']}";
+                $command_auth = " --HtmlAuthUser={$v['login_username']} --HtmlAuthPass={$v['login_password']}";
+                $command_ext = " --ScanningMode={$scan_mode[$v['mode']]} --abortscanafter=600";
+
+                if(!empty($v['login_username']) && !empty($v['login_password'])){
+                    $command = $command_main.$command_mail.$command_auth.$command_ext;
+                    if($items->is_mail == 2){
+                        $command = $command_main.$command_auth.$command_ext;
+                    }
                 }else{
-                    $command = "{$wvs_console} /Scan {$v['url']} /Profile {$scan_profile[$v['profile']]} /Save /GenerateReport /ReportFormat PDF /SaveFolder E:\\yii\\web\\scanreport\\result_{$v['id']} /EmailAddress {$safe_info_ext['user_mail']} --ScanningMode={$scan_mode[$v['mode']]} --HtmlAuthUser={$v['login_username']} --HtmlAuthPass={$v['login_password']} --abortscanafter=600";
+                    $command = $command_main.$command_mail.$command_ext;
+                    if($items->is_mail == 2){
+                        $command = $command_main.$command_ext;
+                    }
                 }
+
                 $res = system($command,$out);
 
                 //根据执行结果更新数据状态，成功则更新为4（已完成），否则为3（取消）
