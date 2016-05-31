@@ -20,7 +20,7 @@ class ScanController extends Controller
     {
         $wvs_console = "D:\\WVS10\\wvs_console";
         $scan_mode = [1 => 'Quick', 2 => 'Heuristic', 3 => 'Extensive'];
-        $scan_profile = ['1' => 'Default', '2' => 'AcuSensor', '3' => 'Blind_SQL_Injection', '4' => 'CSRF', '5' => 'Directory_And_File_Checks', '6' => 'Empty', '7' => 'File_Upload', '8' => 'GHDB', '9' => 'High_Risk_Alerts', '10' => 'Network_Scripts', '11' => 'Parameter_Manipulation', '12' => 'SQL_Injection', '13' => 'Text_Search', '14' => 'Weak_Passwords', '15' => 'Web_Applications', '16' => 'Xss'];
+        $scan_profile = ['1' => 'Default', '2' => 'AcuSensor', '3' => 'Blind_SQL_Injection', '4' => 'CSRF', '5' => 'Directory_And_File_Checks', '6' => 'Empty', '7' => 'File_Upload', '8' => 'GHDB', '9' => 'High_Risk_Alerts', '10' => 'Network_Scripts', '11' => 'Parameter_Manipulation', '12' => 'Sql_Injection', '13' => 'Text_Search', '14' => 'Weak_Passwords', '15' => 'Web_Applications', '16' => 'Xss'];
 
         /*该部分用于处理异常中止的数据，进行中的数据如果已经超过24小时未发生变化，状态置为3，并更新时间*/
         $sql = 'update safe_list set status=3,update_at=now() where status=2 and unix_timestamp(update_at)<unix_timestamp(now())-86400';
