@@ -67,7 +67,7 @@ class ScanController extends Controller
 
                 //根据执行结果更新数据状态，成功则更新为4（已完成），否则为3（取消）
                 $new_date = date('Y-m-d H:i:s');
-                $items->status = $out?4:3;
+                $items->status = 4;
                 $items->update_at = $new_date;
                 $items->save();
             }
