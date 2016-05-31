@@ -61,7 +61,7 @@ class NewController extends Controller
         $details = SafeList::findOne($id);
         $details_ext = SafeExt::find()->where(['safe_id'=>$details->id])->one();
 
-        if($details_ext->user_id != Yii::$app->session['user_id'])
+        if($details_ext->user_id != Yii::$app->session['user_id'] || $details->status != 1)
         {
             Yii::$app->session->setFlash('permission');
         }
