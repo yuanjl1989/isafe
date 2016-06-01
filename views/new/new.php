@@ -6,11 +6,15 @@
 
 use yii\helpers\Html;
 use yii\bootstrap\ActiveForm;
+use app\assets\AppAsset;
+
+AppAsset::register($this);
+AppAsset::addCss($this,"/elegant_font/style.css");
 
 $this->title = '新增扫描申请';
 $this->params['breadcrumbs'][] = $this->title;
 ?>
-<div class="site-contact">
+<div class="site-contact" xmlns="http://www.w3.org/1999/html">
     <h1><?= Html::encode($this->title) ?></h1>
 
     <?php if (Yii::$app->session->hasFlash('newFormSubmitted')): ?>
@@ -33,9 +37,11 @@ $this->params['breadcrumbs'][] = $this->title;
 
                 <div>
                     <hr/>
-                    <?= $form->field($model, 'login_username')->textInput(['placeholder'=>'账号'])->label('表单认证') ?>
+                    <label>表单认证</label>
+                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                    <i class="icon_lightbulb" style="color: orange"></i><label style="color: red;font-size: small;font-weight: 100"> &nbsp;可留空，如需登录认证，请填写账号密码</label>
+                    <?= $form->field($model, 'login_username')->textInput(['placeholder'=>'账号'])->label(false) ?>
                     <?= $form->field($model, 'login_password')->passwordInput(['placeholder'=>'密码'])->label(false) ?>
-                    <p>提示：若系统存在登录认证模块，请填写账号、密码</p>
                     <br/>
                 </div>
                 <div class="form-group">

@@ -28,7 +28,6 @@ AppAsset::register($this);
     <?php
     NavBar::begin([
         'brandLabel' => 'Meters/bonwe安全扫描平台',
-//        'brandUrl' => Yii::$app->homeUrl,
         'brandUrl' => ['/'],
         'options' => [
             'class' => 'navbar-inverse navbar-fixed-top',
@@ -62,7 +61,6 @@ AppAsset::register($this);
     <div class="container">
         <p class="pull-left">&copy; Meters/bonwe <?= date('Y') ?></p>
 
-<!--        <p class="pull-right">--><?//= Yii::powered() ?><!--</p>-->
     </div>
 </footer>
 
