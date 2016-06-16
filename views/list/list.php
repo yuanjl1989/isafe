@@ -8,6 +8,7 @@ use app\models\SafeExt;
 
 AppAsset::register($this);
 AppAsset::addScript($this,"/js/list.js");
+AppAsset::addScript($this,"/layer/layer.js");
 
 $this->title = '申请列表';
 $this->params['breadcrumbs'][] = $this->title;
@@ -42,8 +43,9 @@ $this->params['breadcrumbs'][] = $this->title;
 </form>
 
 <div style="margin-left: 950px">
-    <a href="/new/new" class="btn btn-default btn-lg" role="button">新增安全扫描申请</a>
+    <a id="new_safe" class="btn btn-default btn-lg" role="button">新增安全扫描</a>
 </div>
+
 
 <table class="table table-bordered">
     <br/>

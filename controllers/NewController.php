@@ -33,6 +33,13 @@ class NewController extends Controller
         $model = new NewForm();
         $params = Yii::$app->request->post();
 
+        $tool = Yii::$app->request->get();
+
+        if(isset($tool['tool']) && $tool['tool'] == 'appscan'){
+//            echo "<script>alert('暂不支持该扫描方式，请选择其他工具，谢谢！')</script>";
+            return $this->redirect('/list/list');
+        }
+
         if (!empty($params))
         {
             $safe_id = $this->insertSafeList($params['NewForm']);
