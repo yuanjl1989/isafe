@@ -12,6 +12,7 @@ $this->params['breadcrumbs'][] = $this->title;
 $profile = ['1'=>'默认（均检测）','2'=>'AcuSensor传感器','3'=>'SQL盲注','4'=>'跨站点请求伪造','5'=>'目录和文件检查','6'=>'空（不使用任何检测）','7'=>'文件上传','8'=>'谷歌黑客数据库','9'=>'高风险警报','10'=>'网络脚本','11'=>'参数操纵','12'=>'SQL注入','13'=>'文本搜索','14'=>'弱口令','15'=>'Web应用程序','16'=>'跨站脚本攻击'];
 $mode = ['1'=>'快速','2'=>'混合','3'=>'广泛'];
 $is_mail = ['1'=>'是','2'=>'否'];
+$tool = ['1'=>'Acunetix WVS','2'=>'IBM AppScan'];
 $status = ['1'=>'新建','2'=>'进行中','3'=>'已取消','4'=>'已完成'];
 ?>
 <div class="site-contact">
@@ -33,6 +34,7 @@ $status = ['1'=>'新建','2'=>'进行中','3'=>'已取消','4'=>'已完成'];
                 <div class="form-control-static"><label>扫描配置：</label><?=$profile[$safe_info[0]['profile']]?></div>
                 <div class="form-control-static"><label>扫描模式：</label><?=$mode[$safe_info[0]['mode']]?></div>
                 <div class="form-control-static"><label>邮件通知：</label><?=$is_mail[$safe_info[0]['is_mail']]?></div>
+                <div class="form-control-static"><label>扫描工具：</label><?=$tool[$safe_info[0]['tool']]?></div>
 
                 <?php if(!empty($safe_info[0]['login_username']) && !empty($safe_info[0]['login_password'])):?>
                 <hr/>

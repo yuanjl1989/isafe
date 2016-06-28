@@ -19,6 +19,7 @@ class ScanController extends Controller
     public function actionIndex()
     {
         $wvs_console = "D:\\WVS10\\wvs_console";
+        $appscan_cmd = "D:\\appscan\\AppScanCMD";
         $scan_mode = [1 => 'Quick', 2 => 'Heuristic', 3 => 'Extensive'];
         $scan_profile = ['1' => 'Default', '2' => 'AcuSensor', '3' => 'Blind_SQL_Injection', '4' => 'CSRF', '5' => 'Directory_And_File_Checks', '6' => 'Empty', '7' => 'File_Upload', '8' => 'GHDB', '9' => 'High_Risk_Alerts', '10' => 'Network_Scripts', '11' => 'Parameter_Manipulation', '12' => 'Sql_Injection', '13' => 'Text_Search', '14' => 'Weak_Passwords', '15' => 'Web_Applications', '16' => 'Xss'];
 
@@ -45,27 +46,42 @@ class ScanController extends Controller
             $report_path = "E:\\yii\\web\\scanreport\\result_{$v['id']}";
 
             if ($succ) {
-                //根据页面配置中填写的信息，拼接成扫描命令，--abortscanafter=600该参数作用为：扫描超过10个小时则终止，避免出现假死
-                $command_main = "{$wvs_console} /Scan {$v['url']} /Profile {$scan_profile[$v['profile']]} /Save /GenerateReport /ReportFormat PDF /SaveFolder ".$report_path;
-                $command_mail = " /EmailAddress {$safe_info_ext['user_mail']}";
-                $command_auth = " --HtmlAuthUser={$v['login_username']} --HtmlAuthPass={$v['login_password']}";
-                $command_ext = " --ScanningMode={$scan_mode[$v['mode']]} --abortscanafter=600";
+                if($v['tool'] == 1){
+                    //根据页面配置中填写的信息，拼接成扫描命令，--abortscanafter=600该参数作用为：扫描超过10个小时则终止，避免出现假死
+                    $command_main = "{$wvs_console} /Scan {$v['url']} /Profile {$scan_profile[$v['profile']]} /Save /GenerateReport /ReportFormat PDF /SaveFolder {$report_path}";
+                    $command_mail = " /EmailAddress {$safe_info_ext['user_mail']}";
+                    $command_auth = " --HtmlAuthUser={$v['login_username']} --HtmlAuthPass={$v['login_password']}";
+                    $command_ext = " --ScanningMode={$scan_mode[$v['mode']]} --abortscanafter=600";
 
-                if(!empty($v['login_username']) && !empty($v['login_password'])){
-                    $command = $command_main.$command_mail.$command_auth.$command_ext;
-                    if($items->is_mail == 2){
-                        $command = $command_main.$command_auth.$command_ext;
+                    if(!empty($v['login_username']) && !empty($v['login_password'])){
+                        $command = $command_main.$command_mail.$command_auth.$command_ext;
+                        if($items->is_mail == 2){
+                            $command = $command_main.$command_auth.$command_ext;
+                        }
+                    }else{
+                        $command = $command_main.$command_mail.$command_ext;
+                        if($items->is_mail == 2){
+                            $command = $command_main.$command_ext;
+                        }
                     }
                 }else{
-                    $command = $command_main.$command_mail.$command_ext;
-                    if($items->is_mail == 2){
-                        $command = $command_main.$command_ext;
-                    }
+                    $command = "{$appscan_cmd} /e /su {$v['url']} /d {$report_path}\\result_{$v['id']}.scan /rt Pdf /rf {$report_path}\\report.pdf /v >{$report_path}\\appscan_log.log";
+                    system("mkdir {$report_path}",$out);
                 }
+
+                var_dump($command);
 
                 $res = system($command,$out);
 
-                //根据执行结果更新数据状态，成功则更新为4（已完成），否则为3（取消）
+                if($v['tool'] == 2){
+                    $content = mb_convert_encoding(file_get_contents($report_path.'\\appscan_log.log'), "UTF-8");
+
+                    if($items->is_mail == 1){
+                        $this->sendMail($report_path,$content,$safe_info_ext['user_mail']);
+                    }
+                }
+
+                //根据执行结果更新数据状态
                 $new_date = date('Y-m-d H:i:s');
                 $items->status = 4;
                 $items->update_at = $new_date;
@@ -82,5 +98,20 @@ class ScanController extends Controller
         $safe_info = SafeList::find()->where(['status' => 1])->orderBy(['create_at' => SORT_ASC])->asArray()->all();
 
         return $safe_info;
+    }
+
+    public function sendMail($report_path,$content,$mail_to)
+    {
+        $mail = Yii::$app->mailer->compose();
+        $mail -> setFrom('pmt_noreply@163.com');
+        $mail -> setTo($mail_to);
+        $mail -> attach($report_path.'\\report.pdf');
+        $mail -> setSubject('[appscan]美邦安全扫描平台测试报告' );
+        $mail -> setHtmlBody('test');
+        if($mail -> send()){
+            echo 'sucess';
+        }else{
+            echo 'failse';
+        }
     }
 }

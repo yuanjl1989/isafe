@@ -42,6 +42,7 @@ $this->params['breadcrumbs'][] = $this->title;
                 <?= $form->field($model, 'profile')->dropDownList(['1'=>'默认（均检测）','2'=>'AcuSensor传感器','3'=>'SQL盲注','4'=>'跨站点请求伪造','5'=>'目录和文件检查','6'=>'空（不使用任何检测）','7'=>'文件上传','8'=>'谷歌黑客数据库','9'=>'高风险警报','10'=>'网络脚本','11'=>'参数操纵','12'=>'SQL注入','13'=>'文本搜索','14'=>'弱口令','15'=>'Web应用程序','16'=>'跨站脚本攻击'])->label('扫描配置') ?>
                 <?= $form->field($model, 'mode')->dropDownList(['1'=>'快速','2'=>'混合','3'=>'广泛'])->label('扫描模式') ?>
                 <?= $form->field($model, 'is_mail')->inline()->radioList(['1'=>'是','2'=>'否'])->label('邮件通知') ?>
+                <?= $form->field($model, 'tool')->inline()->radioList(['1'=>'Acunetix WVS','2'=>'IBM AppScan'])->label('扫描工具') ?>
 
                 <div>
                     <hr/>

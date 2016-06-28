@@ -43,7 +43,7 @@ $this->params['breadcrumbs'][] = $this->title;
 </form>
 
 <div style="margin-left: 950px">
-    <a id="new_safe" class="btn btn-default btn-lg" role="button">新增安全扫描</a>
+    <a href="/new/new" class="btn btn-default btn-lg" role="button">新增安全扫描</a>
 </div>
 
 

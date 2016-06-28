@@ -18,6 +18,7 @@ class NewForm extends Model
     public $login_password;
     public $mode;
     public $is_mail;
+    public $tool;
 
 
     /**
@@ -27,7 +28,7 @@ class NewForm extends Model
     {
         return [
             ['url','url'],
-            [['url','profile','mode','is_mail'], 'required'],
+            [['url','profile','mode','is_mail','tool'], 'required'],
         ];
     }
     
