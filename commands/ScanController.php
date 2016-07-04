@@ -65,7 +65,7 @@ class ScanController extends Controller
                         }
                     }
                 }else{
-                    $command = "{$appscan_cmd} /e /su {$v['url']} /d {$report_path}\\result_{$v['id']}.scan /rt Pdf /rf {$report_path}\\report.pdf /v >{$report_path}\\appscan_log.log";
+                    $command = "{$appscan_cmd} /e /su {$v['url']} /d {$report_path}\\result_{$v['id']}.scan /rt Pdf /rf {$report_path}\\report.pdf >{$report_path}\\appscan_log.log";
                     system("mkdir {$report_path}",$out);
                 }
 
@@ -73,12 +73,11 @@ class ScanController extends Controller
 
                 $res = system($command,$out);
 
-                if($v['tool'] == 2){
-                    $content = mb_convert_encoding(file_get_contents($report_path.'\\appscan_log.log'), "UTF-8");
-
-                    if($items->is_mail == 1){
-                        $this->sendMail($report_path,$content,$safe_info_ext['user_mail']);
-                    }
+                /*用户勾选了发送邮件，且选择扫描工具为appscan时，执行以下代码*/
+                if($v['tool'] == 2 && $items->is_mail == 1){
+                    $content = $this->getFileLastLines($report_path.'\\appscan_log.log',15);//获取最后15行的内容
+                    $content = mb_convert_encoding($content,'UTF-8','GBK');//把日志中读取的内容转化为UTF-8编码
+                    $this->sendMail($report_path,$content,$safe_info_ext['user_mail']);
                 }
 
                 //根据执行结果更新数据状态
@@ -100,6 +99,12 @@ class ScanController extends Controller
         return $safe_info;
     }
 
+    /**
+     * 发送邮件方法
+     * $report_path为附件路径
+     * $content为邮件正文内容
+     * $mail_to为收件人
+     */
     public function sendMail($report_path,$content,$mail_to)
     {
         $mail = Yii::$app->mailer->compose();
@@ -107,11 +112,44 @@ class ScanController extends Controller
         $mail -> setTo($mail_to);
         $mail -> attach($report_path.'\\report.pdf');
         $mail -> setSubject('[appscan]美邦安全扫描平台测试报告' );
-        $mail -> setHtmlBody('test');
+        $mail -> setTextBody($content);
         if($mail -> send()){
             echo 'sucess';
         }else{
             echo 'failse';
         }
+    }
+
+    /**
+     * 获取文件最后几行内容的方法
+     * $filename为文件路径+文件名
+     * $n为获取内容的行数
+     */
+    public function getFileLastLines($filename,$n){
+        if(!$fp=fopen($filename,'r')){
+            echo "打开文件失败，请检查文件路径是否正确，路径和文件名不要包含中文";
+            return false;
+        }
+        $pos=-2;
+        $eof="";
+        while($n>0){
+            while($eof!="\n"){
+                if(!fseek($fp,$pos,SEEK_END)){
+                    $eof=fgetc($fp);
+                    $pos--;
+                }else{
+                    break;
+                }
+            }
+            $arr[]=fgets($fp);
+            $eof="";
+            $n--;
+        }
+        unset($arr[0]);
+        unset($arr[1]);
+        /*由于获取内容是从最后一行开始的，故把每行内容存入数组后，对数组进行重新排序；重新排序完成后再转换为字符串*/
+        krsort($arr);
+        $str = implode('',$arr);
+        return $str;
     }
 }

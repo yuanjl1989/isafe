@@ -52,6 +52,7 @@ class NewController extends Controller
         }
 
         $model->is_mail = 1;
+        $model->tool = 1;
 
         return $this->render('new', [
             'model' => $model,
@@ -111,6 +112,7 @@ class NewController extends Controller
         $safelist->login_password = $params['login_password'];
         $safelist->mode = $params['mode'];
         $safelist->is_mail = $params['is_mail'];
+        $safelist->tool = $params['tool'];
         $safelist->create_at = $date;
 
         $safelist->save();
@@ -129,6 +131,7 @@ class NewController extends Controller
         $safe_info->login_password = $params['login_password'];
         $safe_info->mode = $params['mode'];
         $safe_info->is_mail = $params['is_mail'];
+        $safe_info->tool = $params['tool'];
         $safe_info->update_at = $date;
 
         $safe_info->save();
