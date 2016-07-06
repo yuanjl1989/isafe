@@ -42,12 +42,15 @@ $this->params['breadcrumbs'][] = $this->title;
                 <?= $form->field($model, 'profile')->dropDownList(['1'=>'默认（均检测）','2'=>'AcuSensor传感器','3'=>'SQL盲注','4'=>'跨站点请求伪造','5'=>'目录和文件检查','6'=>'空（不使用任何检测）','7'=>'文件上传','8'=>'谷歌黑客数据库','9'=>'高风险警报','10'=>'网络脚本','11'=>'参数操纵','12'=>'SQL注入','13'=>'文本搜索','14'=>'弱口令','15'=>'Web应用程序','16'=>'跨站脚本攻击'])->label('扫描配置') ?>
                 <?= $form->field($model, 'mode')->dropDownList(['1'=>'快速','2'=>'混合','3'=>'广泛'])->label('扫描模式') ?>
                 <?= $form->field($model, 'is_mail')->inline()->radioList(['1'=>'是','2'=>'否'])->label('邮件通知') ?>
-                <?= $form->field($model, 'tool')->inline()->radioList(['1'=>'Acunetix WVS','2'=>'IBM AppScan'])->label('扫描工具') ?>
+                <label>扫描工具</label>
+                &nbsp;&nbsp;&nbsp;
+                <i class="icon_lightbulb" style="color: orange"></i><label style="color: red;font-size: small;font-weight: 100">&nbsp;扫描配置/模式/表单认证仅勾选WVS时有效</label>
+                <?= $form->field($model, 'tool')->inline()->radioList(['1'=>'Acunetix WVS','2'=>'IBM AppScan'])->label(false) ?>
 
                 <div>
                     <hr/>
                     <label>表单认证</label>
-                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                    &nbsp;&nbsp;&nbsp;
                     <i class="icon_lightbulb" style="color: orange"></i><label style="color: red;font-size: small;font-weight: 100"> &nbsp;可留空，如需登录认证，请填写账号密码</label>
                     <?= $form->field($model, 'login_username')->textInput(['placeholder'=>'账号'])->label(false) ?>
                     <?= $form->field($model, 'login_password')->passwordInput(['placeholder'=>'密码'])->label(false) ?>
@@ -56,7 +59,6 @@ $this->params['breadcrumbs'][] = $this->title;
                 <div class="form-group">
                     <?= Html::submitButton('更新', ['class' => 'btn btn-primary', 'name' => 'edit-button']) ?>
                 </div>
-
                 <?php ActiveForm::end(); ?>
 
             </div>
