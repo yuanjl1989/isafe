@@ -6,15 +6,11 @@
  * Time: 14:25
  */
 class AppScan{
-
     public function getAppScanIssue($id = 109)
     {
         $pdftotext_path = 'E:\\xpdf\\';
-
         $report_path = 'E:\\yii\\web\\scanreport\\result_'.$id.'\\';
-
         $command = $pdftotext_path . 'pdftotext.exe ' . $report_path . 'report.pdf';
-
         system($command, $output);
 
         if ($output === 0) {
@@ -29,18 +25,16 @@ class AppScan{
 
             $summary_info = array('start_time'=>$start_time[1],'profile'=>$profile[1],'url'=>$url[1],'os'=>$os[1],'server'=>$server[1]);
 
-            $mat_arr = explode(' ', $matches[1]);
+            $mat_arr = explode(' ', $matches[1]);//var_dump($mat_arr);
+            unset($mat_arr[count($mat_arr) - 1]);
             foreach ($mat_arr as $key => $item) {
                 if (is_numeric($item) && $item < 100) {
-                    if ($key == count($mat_arr) - 1) {
-                        unset($mat_arr[$key]);
-                    }
-                    elseif (!preg_match("/^[a-zA-Z\s]+$/",$mat_arr[$key-1])) {
+                    if (!preg_match("/^[a-zA-Z\s]+$/",$mat_arr[$key-1])) {
                         $mat_arr[$key] = '||';
                     }
                 }
 
-                if(strstr($item,date('Y/n/j'))){
+                if(strstr($item,'2016/')){//date('Y/n/j'))){
                     $item_arr = explode("\r\n",$item);
                     if(count(array_filter($item_arr))>3){
                         $new_key = count($item_arr)-1;
@@ -68,7 +62,6 @@ class AppScan{
                     $issues_arr[] = array('issue_name' => trim(str_replace("\r\n", '', $issue_name[1])), 'severity' => trim(str_replace("\r\n", '', $severity[1])), 'affects' => trim(str_replace("\r\n", '', $affects[1])), 'risk' => trim(str_replace("\r\n", '', $risk[1])), 'suggestion' => trim(str_replace("\r\n", '', $suggestion[1])), 'desc' => trim(str_replace("\r\n", '', $desc[1])));
                 }
             }
-//            var_dump($issues_arr);die;
             $high = $mid = $low = $info = 0;
             foreach ($issues_arr as $item){
                 if(strstr($item['severity'],'高')){
@@ -86,12 +79,8 @@ class AppScan{
             }
             $summary_info = array_merge($summary_info,array('high'=>$high,'mid'=>$mid,'low'=>$low,'info'=>$info));
             $ret = array('summary'=>$summary_info,'details'=>$issues_arr) ;
-//            var_dump($ret);
 
             return $ret;
         }
     }
 }
-
-$test = new AppScan();
-$test->getAppScanIssue();
