@@ -93,12 +93,13 @@ $this->params['breadcrumbs'][] = $this->title;
 
 </table>
 
-<?php
+<ul class="pagination">
+    <?php
 
     $params_str = '';
-    $queryParams = Yii::$app->request->getQueryParams();
-    unset($queryParams['s']);
-    unset($queryParams['page']);
+    $queryParams = Yii::$app->getRequest()->getQueryParams();
+
+    unset($queryParams['s'],$queryParams['page']);
 
     if(!empty($queryParams)){
         foreach ($queryParams as $k => $v){
@@ -112,12 +113,17 @@ $this->params['breadcrumbs'][] = $this->title;
     }else{
         $url = '/list/list?page=';
     }
+    if($page >1)
+        echo "<li><a href='".$url.($page-1)."'>&laquo;</a></li>";
+    for ($i=1;$i<= $pages;$i++){
+        if($i == $page){
+            echo "<li><a style='color: lightgray' href ='javascript:return false;'>$i</a></li>";
+        }else{
+            echo "<li><a href='".$url.$i."'>$i</a></li>";
+        }
+    }
+    if($page < $pages)
+        echo "<li><a href='".$url.($page+1)."'>&raquo;</a></li>";
 
-    echo "<div align='center'>共有".$pages."页(".$page."/".$pages.")&nbsp;&nbsp;&nbsp;";
-    for ($i=1;$i< $page;$i++)
-        echo "<a href='".$url.$i."'>[".$i ."]</a> ";
-        echo "[".$page."] ";
-    for ($j=$page+1;$j<=$pages;$j++)
-        echo "<a href='".$url.$j."'>[".$j ."]</a> ";
-        echo "</div>";
-?>
+    ?>
+</ul>

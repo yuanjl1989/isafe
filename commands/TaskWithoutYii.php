@@ -56,7 +56,7 @@ class Scan
                     $command_main = "{$wvs_console} /Scan {$v['url']} /Profile {$scan_profile[$v['profile']]} /Save /GenerateReport /ReportFormat PDF /SaveFolder {$report_path}";
                     $command_mail = " /EmailAddress {$safe_info_ext['user_mail']}";
                     $command_auth = " --HtmlAuthUser={$v['login_username']} --HtmlAuthPass={$v['login_password']}";
-                    $command_ext = " --ScanningMode={$scan_mode[$v['mode']]} --abortscanafter=600 >{$report_path}\\wvs_log.log";
+                    $command_ext = " --ScanningMode={$scan_mode[$v['mode']]} --abortscanafter=30 >{$report_path}\\wvs_log.log";
 
                     if (!empty($v['login_username']) && !empty($v['login_password'])) {
                         $command = $command_main . $command_mail . $command_auth . $command_ext;
@@ -84,8 +84,8 @@ class Scan
                     }
                     $this->generateWvsReport($v['id']);
                     if ($v['is_mail'] == 1) {
-                        $content = $this->getFileLastLines($report_path . '\\wvs_log.log', 16);//获取最后15行的内容
-                        $content = mb_convert_encoding($content, 'UTF-8', 'GBK');//把日志中读取的内容转化为UTF-8编码
+                        $content = file_get_contents($report_path.'\\report.html');//获取最后15行的内容
+//                        $content = mb_convert_encoding($content, 'UTF-8', 'GBK');//把日志中读取的内容转化为UTF-8编码
                         $this->sendMail($report_path.'\\report.html', $content, $safe_info_ext['user_mail']);
                     }
                 }
@@ -93,8 +93,8 @@ class Scan
                 if ($v['tool'] == 2){
                     $this->generateAppScanReport($v['id']);
                     if($v['is_mail'] == 1){
-                        $content = $this->getFileLastLines($report_path . '\\appscan_log.log', 15);//获取最后15行的内容
-                        $content = mb_convert_encoding($content, 'UTF-8', 'GBK');//把日志中读取的内容转化为UTF-8编码
+                        $content = file_get_contents($report_path.'\\report.html');//获取最后15行的内容
+//                        $content = mb_convert_encoding($content, 'UTF-8', 'GBK');//把日志中读取的内容转化为UTF-8编码
                         $this->sendMail($report_path.'\\report.html', $content, $safe_info_ext['user_mail']);
                     }
                 }
@@ -132,7 +132,7 @@ class Scan
             $mail->Subject = "美邦安全扫描平台测试报告";
             $mail->Body = $content;
             $mail->AltBody = "To view the message, please use an HTML compatible email viewer!"; //当邮件不支持html时备用显示，可以省略
-            $mail->WordWrap = 80; // 设置每行字符串的长度
+//            $mail->WordWrap = 80; // 设置每行字符串的长度
             $mail->AddAttachment($report_path); //可以添加附件
             $mail->IsHTML(true);
             $mail->Send();
@@ -338,10 +338,10 @@ class Scan
         $content .= '<tr><td style="background-color:#efefef;'.$td_css.'">服务</td><td style="'.$td_css.'">'.$safe_issues[0]['servers'].'</td></tr>';
         $content .= '<tr><td style="background-color:#efefef;'.$td_css.'">系统</td><td style="'.$td_css.'">'.$safe_issues[0]['os'].'</td></tr>';
         $content .= '<tr><th style="'.$th_css.'" colspan="2">扫描结果</th></tr>';
-        $content_num = '<span style="font-size: 15px;font-weight:bold">'.'总数：'.($high+$mid+$low)."</span><br/>";
-        $content_num .= '<span style="font-size: 15px;color:red">'.'高：'.$high."</span><br/>";
-        $content_num .= '<span style="font-size: 15px;color:orange">'.'中：'.$mid."</span><br/>";
-        $content_num .= '<span style="font-size: 15px;color:deepskyblue">'.'低：'.$low."</span><br/>";
+        $content_num = '<span style="font-size: 15px;font-weight:bold">'.'总数：'.($high+$mid+$low)."</span><br/>".
+                       '<span style="font-size: 15px;color:red">'.'高：'.$high."</span><br/>".
+                       '<span style="font-size: 15px;color:orange">'.'中：'.$mid."</span><br/>".
+                       '<span style="font-size: 15px;color:deepskyblue">'.'低：'.$low."</span><br/>";
         $content .= '<tr><td style="background-color:#efefef;'.$td_css.'">问题数量</td><td style="'.$td_css.'">'.$content_num.'</td></tr>';
         $content .= '</table>';
         $content .= "<br/><br/>";
@@ -434,11 +434,11 @@ class Scan
         $content .= '<tr><td style="background-color:#efefef;'.$td_css.'">服务</td><td style="'.$td_css.'">'.$issues_info['summary']['server'].'</td></tr>';
         $content .= '<tr><td style="background-color:#efefef;'.$td_css.'">系统</td><td style="'.$td_css.'">'.$issues_info['summary']['os'].'</td></tr>';
         $content .= '<tr><th style="'.$th_css.'" colspan="2">扫描结果</th></tr>';
-        $content_num = '<span style="font-size: 15px;font-weight:bold">'.'总数：'.($issues_info['summary']['high']+$issues_info['summary']['mid']+$issues_info['summary']['low']+$issues_info['summary']['info'])."</span><br/>";
-        $content_num .= '<span style="font-size: 15px;color:red">'.'高：'.$issues_info['summary']['high']."</span><br/>";
-        $content_num .= '<span style="font-size: 15px;color:orange">'.'中：'.$issues_info['summary']['mid']."</span><br/>";
-        $content_num .= '<span style="font-size: 15px;color:deepskyblue">'.'低：'.$issues_info['summary']['low']."</span><br/>";
-        $content_num .= '<span style="font-size: 15px;color:deepskyblue">'.'参考：'.$issues_info['summary']['info']."</span><br/>";
+        $content_num = '<span style="font-size: 15px;font-weight:bold">'.'总数：'.($issues_info['summary']['high']+$issues_info['summary']['mid']+$issues_info['summary']['low']+$issues_info['summary']['info'])."</span><br/>".
+                       '<span style="font-size: 15px;color:red">'.'高：'.$issues_info['summary']['high']."</span><br/>".
+                       '<span style="font-size: 15px;color:orange">'.'中：'.$issues_info['summary']['mid']."</span><br/>".
+                       '<span style="font-size: 15px;color:deepskyblue">'.'低：'.$issues_info['summary']['low']."</span><br/>".
+                       '<span style="font-size: 15px;color:deepskyblue">'.'参考：'.$issues_info['summary']['info']."</span><br/>";
         $content .= '<tr><td style="background-color:#efefef;'.$td_css.'">问题数量</td><td style="'.$td_css.'">'.$content_num.'</td></tr>';
         $content .= '</table>';
         $content .= "<br/><br/>";
@@ -470,6 +470,7 @@ class Scan
         $content .= '</div>';
         $content .= '</body>';
         $content .= '<html>';
+        var_dump($content);
 
         $fp = fopen("E:\\yii\\web\\scanreport\\result_{$id}\\report.html","w");
         fwrite($fp,$content);
@@ -503,4 +504,4 @@ class Scan
 }
 
 $test = new Scan();
-$rs = $test->generateAppScanReport($id = 109);
+$rs = $test->actionIndex();
