@@ -33,26 +33,10 @@ class ListController extends Controller
     public function actionList()
     {
         $params = $p = Yii::$app->request->get();
-
         $status_arr = array(1=>'新建',2=>'进行中',3=>'已取消',4=>'已完成');
-        $page_size = 10;
-
-        if($params){
-            if(key_exists('status_1',$params) || key_exists('status_2',$params) || key_exists('status_3',$params) || key_exists('status_4',$params)){
-                foreach ($params as $k=>$v){
-                    if(substr($k,0,6) == 'status'){
-                        $status[] = $v;
-                        unset($params[$k]);
-                    }
-                }
-                $params['status'] = $status;
-            }
-        }
-
+        $page_size = 15;
         $list_info = $this->getListInfo($params,isset($params['page'])?$params['page']:1,$page_size);
-
         $pages=ceil($list_info['row_num']/$page_size);
-
         return $this->render('list',['list_info'=>$list_info['list_info'],'status_arr'=>$status_arr,'params'=>$p,'pages'=>$pages>1?$pages:1,'page'=>isset($params['page'])?$params['page']:1]);
     }
 
@@ -81,7 +65,6 @@ class ListController extends Controller
                 }
                 $safe_ids = implode(',',$safe_id_arr);
             }
-
         }
 
         if(!empty($conditions['username']) && !empty($conditions['status']))

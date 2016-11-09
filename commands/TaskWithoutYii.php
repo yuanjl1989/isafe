@@ -29,7 +29,7 @@ class Scan
         $scan_profile = ['1' => 'Default', '2' => 'AcuSensor', '3' => 'Blind_SQL_Injection', '4' => 'CSRF', '5' => 'Directory_And_File_Checks', '6' => 'Empty', '7' => 'File_Upload', '8' => 'GHDB', '9' => 'High_Risk_Alerts', '10' => 'Network_Scripts', '11' => 'Parameter_Manipulation', '12' => 'Sql_Injection', '13' => 'Text_Search', '14' => 'Weak_Passwords', '15' => 'Web_Applications', '16' => 'Xss'];
 
         /*该部分用于处理异常中止的数据，进行中的数据如果已经超过24小时未发生变化，状态置为3，并更新时间*/
-        $sql = 'update safe_list set status=3,update_at=now() where status=2 and unix_timestamp(update_at)<unix_timestamp(now())-86400';
+        $sql = 'update safe_list set status=3,update_at=now() where status=2 and (unix_timestamp(update_at)<unix_timestamp(now())-86400 OR unix_timestamp(create_at)<unix_timestamp(now())-86400*7)';
         $stmt = $this->connectDB()->exec($sql);
         echo $stmt . " data has been updated !";
 
@@ -52,11 +52,11 @@ class Scan
             $report_path = "E:\\yii\\web\\scanreport\\result_{$v['id']}";
             if ($succ) {
                 if ($v['tool'] == 1) {
-                    //根据页面配置中填写的信息，拼接成扫描命令，--abortscanafter=600该参数作用为：扫描超过10个小时则终止，避免出现假死
+                    //根据页面配置中填写的信息，拼接成扫描命令，--abortscanafter=60该参数作用为：扫描超过1个小时则终止，避免出现假死
                     $command_main = "{$wvs_console} /Scan {$v['url']} /Profile {$scan_profile[$v['profile']]} /Save /GenerateReport /ReportFormat PDF /SaveFolder {$report_path}";
                     $command_mail = " /EmailAddress {$safe_info_ext['user_mail']}";
                     $command_auth = " --HtmlAuthUser={$v['login_username']} --HtmlAuthPass={$v['login_password']}";
-                    $command_ext = " --ScanningMode={$scan_mode[$v['mode']]} --abortscanafter=30 >{$report_path}\\wvs_log.log";
+                    $command_ext = " --ScanningMode={$scan_mode[$v['mode']]} --abortscanafter=60 >{$report_path}\\wvs_log.log";
 
                     if (!empty($v['login_username']) && !empty($v['login_password'])) {
                         $command = $command_main . $command_mail . $command_auth . $command_ext;
@@ -85,8 +85,7 @@ class Scan
                     $this->generateWvsReport($v['id']);
                     if ($v['is_mail'] == 1) {
                         $content = file_get_contents($report_path.'\\report.html');//获取最后15行的内容
-//                        $content = mb_convert_encoding($content, 'UTF-8', 'GBK');//把日志中读取的内容转化为UTF-8编码
-                        $this->sendMail($report_path.'\\report.html', $content, $safe_info_ext['user_mail']);
+                        $this->sendMail($report_path.'\\report.docx', $content, $safe_info_ext['user_mail']);
                     }
                 }
                 /*用户勾选了发送邮件，且选择扫描工具为appscan时，执行以下代码*/
@@ -94,9 +93,9 @@ class Scan
                     $this->generateAppScanReport($v['id']);
                     if($v['is_mail'] == 1){
                         $content = file_get_contents($report_path.'\\report.html');//获取最后15行的内容
-//                        $content = mb_convert_encoding($content, 'UTF-8', 'GBK');//把日志中读取的内容转化为UTF-8编码
                         $this->sendMail($report_path.'\\report.html', $content, $safe_info_ext['user_mail']);
                     }
+                    exec('rm -rf *.xml');
                 }
 
                 //根据执行结果更新数据状态
@@ -220,7 +219,7 @@ class Scan
         return $content;
     }
 
-    public function generateWvsReport($id = 106)
+    public function generateWvsReport($id)
     {
         $profile = ['1'=>'默认（均检测）','2'=>'AcuSensor传感器','3'=>'SQL盲注','4'=>'跨站点请求伪造','5'=>'目录和文件检查','6'=>'空（不使用任何检测）','7'=>'文件上传','8'=>'谷歌黑客数据库','9'=>'高风险警报','10'=>'网络脚本','11'=>'参数操纵','12'=>'SQL注入','13'=>'文本搜索','14'=>'弱口令','15'=>'Web应用程序','16'=>'跨站脚本攻击'];
 
@@ -290,7 +289,6 @@ class Scan
 
         $no_lib = $conn->query('select distinct issues from safe_issues where issues not in (select issue_en from issues_lib) and safe_id='.$id)->fetchAll();
         if(!empty($no_lib)){
-            //var_dump($no_lib);die;
             $symbol = array(' "','" ',':','.',',',' ','(',')','[',']');
             foreach ($no_lib as $issue_name){
                 $sql_affects_severity = 'select issues,group_concat(distinct affects) as affects,severity from safe_issues where safe_id='.$id.' and issues='."'".$issue_name['issues']."'";
@@ -408,12 +406,12 @@ class Scan
         fclose($fp);
     }
 
-    public function generateAppScanReport($id = 95)
+    public function generateAppScanReport($id)
     {
         require_once 'AnalisysPDF.php';
 
         $appscan = new AppScan();
-        $issues_info = $appscan->getAppScanIssue($id);//var_dump($issues_info);die;
+        $issues_info = $appscan->getAppScanIssue($id);
 
         $table_css = 'font-family:微软雅黑;font-size:14px;border-collapse: collapse;border-spacing:0;';
         $td_css = 'padding: 8px;border: 1px solid;width: 200px';
@@ -429,10 +427,10 @@ class Scan
         $content .= '<tr><th style="'.$th_css.'" colspan="2">扫描信息</th></tr>';
         $content .= '<tr><td style="background-color:#efefef;'.$td_css.'">目标URL</td><td style="'.$td_css.'">'.$issues_info['summary']['url'].'</td></tr>';
         $content .= '<tr><td style="background-color:#efefef;'.$td_css.'">开始时间</td><td style="'.$td_css.'">'.$issues_info['summary']['start_time'].'</td></tr>';
-        $content .= '<tr><td style="background-color:#efefef;'.$td_css.'">扫描模式</td><td style="'.$td_css.'">'.$issues_info['summary']['profile'].'</td></tr>';
+        $content .= '<tr><td style="background-color:#efefef;'.$td_css.'">扫描模式</td><td>默认</td></tr>';
         $content .= '<tr><th style="'.$th_css.'" colspan="2">服务信息</th></tr>';
-        $content .= '<tr><td style="background-color:#efefef;'.$td_css.'">服务</td><td style="'.$td_css.'">'.$issues_info['summary']['server'].'</td></tr>';
-        $content .= '<tr><td style="background-color:#efefef;'.$td_css.'">系统</td><td style="'.$td_css.'">'.$issues_info['summary']['os'].'</td></tr>';
+        $content .= '<tr><td style="background-color:#efefef;'.$td_css.'">服务</td><td style="'.$td_css.'">'.(($issues_info['summary']['server'] == 'Unknown')?'未知':$issues_info['summary']['server']).'</td></tr>';
+        $content .= '<tr><td style="background-color:#efefef;'.$td_css.'">系统</td><td style="'.$td_css.'">'.(($issues_info['summary']['os'] == 'Unknown')?'未知':$issues_info['summary']['os']).'</td></tr>';
         $content .= '<tr><th style="'.$th_css.'" colspan="2">扫描结果</th></tr>';
         $content_num = '<span style="font-size: 15px;font-weight:bold">'.'总数：'.($issues_info['summary']['high']+$issues_info['summary']['mid']+$issues_info['summary']['low']+$issues_info['summary']['info'])."</span><br/>".
                        '<span style="font-size: 15px;color:red">'.'高：'.$issues_info['summary']['high']."</span><br/>".
@@ -470,7 +468,6 @@ class Scan
         $content .= '</div>';
         $content .= '</body>';
         $content .= '<html>';
-        var_dump($content);
 
         $fp = fopen("E:\\yii\\web\\scanreport\\result_{$id}\\report.html","w");
         fwrite($fp,$content);
