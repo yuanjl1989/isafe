@@ -36,9 +36,9 @@ $this->params['breadcrumbs'][] = $this->title;
                 <?= $form->field($model, 'is_mail')->inline()->radioList(['1'=>'是','2'=>'否'])->label('邮件通知') ?>
                 <label>扫描工具</label>
                 &nbsp;&nbsp;&nbsp;
-                <i class="icon_lightbulb" style="color: orange"></i><label style="color: red;font-size: small;font-weight: 100">&nbsp;扫描配置/模式/表单认证仅勾选WVS时有效</label>
-                <?= $form->field($model, 'tool')->inline()->radioList(['1'=>'Acunetix WVS','2'=>'IBM AppScan'])->label(false) ?>
-
+                <i class="icon_lightbulb" style="color: orange"></i><label style="color: red;font-size: small;font-weight: 100">&nbsp;扫描配置/模式/表单认证仅对WVS生效</label>
+                <?= $form->field($model, 'tool')->inline()->radioList(['0'=>'全部','1'=>'Acunetix WVS','2'=>'IBM AppScan'])->label(false) ?>
+<!--                --><?/*= $form->field($model, 'is_port')->inline()->radioList(['1'=>'是','2'=>'否'])->label('端口扫描') */?>
                 <div>
                     <hr/>
                     <label>表单认证</label>
@@ -48,6 +48,7 @@ $this->params['breadcrumbs'][] = $this->title;
                     <?= $form->field($model, 'login_password')->passwordInput(['placeholder'=>'密码'])->label(false) ?>
                     <br/>
                 </div>
+<!--                --><?/*= $form->field($model, 'is_audit')->inline()->radioList(['1'=>'是','2'=>'否'])->label('人工审核') */?>
                 <div class="form-group">
                     <?= Html::submitButton('提交', ['class' => 'btn btn-primary', 'name' => 'new-button']) ?>
                     &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;

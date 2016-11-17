@@ -44,8 +44,8 @@ $this->params['breadcrumbs'][] = $this->title;
                 <?= $form->field($model, 'is_mail')->inline()->radioList(['1'=>'是','2'=>'否'])->label('邮件通知') ?>
                 <label>扫描工具</label>
                 &nbsp;&nbsp;&nbsp;
-                <i class="icon_lightbulb" style="color: orange"></i><label style="color: red;font-size: small;font-weight: 100">&nbsp;扫描配置/模式/表单认证仅勾选WVS时有效</label>
-                <?= $form->field($model, 'tool')->inline()->radioList(['1'=>'Acunetix WVS','2'=>'IBM AppScan'])->label(false) ?>
+                <i class="icon_lightbulb" style="color: orange"></i><label style="color: red;font-size: small;font-weight: 100">&nbsp;扫描配置/模式/表单认证仅对WVS生效</label>
+                <?= $form->field($model, 'tool')->inline()->radioList(['0'=>'全部','1'=>'Acunetix WVS','2'=>'IBM AppScan'])->label(false) ?>
 
                 <div>
                     <hr/>

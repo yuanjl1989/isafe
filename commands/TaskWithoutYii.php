@@ -6,6 +6,9 @@
  * Date: 2016/8/9
  * Time: 10:55
  */
+
+require 'AnalisysReport.php';
+
 class Scan
 {
     private function connectDB()
@@ -14,7 +17,7 @@ class Scan
         $username = "root";
         $password = "mbdev321";
         try {
-            $conn = new PDO("mysql:host=$servername;dbname=mb_safe", $username, $password,array(PDO::MYSQL_ATTR_INIT_COMMAND => "set names utf8"));
+            $conn = new PDO("mysql:host=$servername;dbname=mb_safe", $username, $password, array(PDO::MYSQL_ATTR_INIT_COMMAND => "set names utf8"));
             return $conn;
         } catch (PDOException $e) {
             echo $e->getMessage();
@@ -45,13 +48,12 @@ class Scan
         $safe_info = $this->connectDB()->query($sql)->fetchAll();
 
         foreach ($safe_info as $k => $v) {
-
             $succ = $this->connectDB()->exec("update safe_list set status=2,update_at='" . $date . "' where id=" . $v['id']);
             $safe_info_ext = $this->connectDB()->query('select * from safe_ext where safe_id=' . $v['id'])->fetch();
 
             $report_path = "E:\\yii\\web\\scanreport\\result_{$v['id']}";
             if ($succ) {
-                if ($v['tool'] == 1) {
+                if ($v['tool'] == 1 || $v['tool'] == 0) {
                     //根据页面配置中填写的信息，拼接成扫描命令，--abortscanafter=60该参数作用为：扫描超过1个小时则终止，避免出现假死
                     $command_main = "{$wvs_console} /Scan {$v['url']} /Profile {$scan_profile[$v['profile']]} /Save /GenerateReport /ReportFormat PDF /SaveFolder {$report_path}";
                     $command_mail = " /EmailAddress {$safe_info_ext['user_mail']}";
@@ -69,31 +71,54 @@ class Scan
                             $command = $command_main . $command_ext;
                         }
                     }
-                } else {
-                    $command = "{$appscan_cmd} /e /su {$v['url']} /d {$report_path}\\result_{$v['id']}.scan /rt Pdf /rf {$report_path}\\report.pdf >{$report_path}\\appscan_log.log";
-                }
-                echo "\n" . $command;
-                system("mkdir {$report_path}", $out);
-                system($command, $out);
-
-                if ($v['tool'] == 1) {
-                    $issues = $this->queryWvsAlerts($v['url']);
-                    foreach ($issues as $res) {
-                        $sql_3 = "insert into safe_issues(safe_id,servers,os,language,issues,affects,severity,details,request,response) VALUES ({$v['id']},'" . $res['servers'] . "','" . $res['os'] . "','" . $res['language'] . "','" . $res['issues'] . "','" . $res['affects'] . "','" . $res['severity'] . "','" . $res['details'] . "','" . $res['request'] . "','" . $res['response'] . "')";
-                        $this->connectDB()->exec($sql_3);
+                    if ($v['tool'] == 0) {
+                        $command_wvs = $command;
                     }
+                }
+                if ($v['tool'] == 2 || $v['tool'] == 0) {
+                    $command = "{$appscan_cmd} /e /su {$v['url']} /d {$report_path}\\result_{$v['id']}.scan /rt html /rf {$report_path}\\report_appscan_init.html >{$report_path}\\appscan_log.log";
+                    if ($v['tool'] == 0) {
+                        $command_appscan = $command;
+                    }
+                }
+
+                if ($v['tool'] == 0) {
+                    echo "\n" . $command_wvs;
+                    system("mkdir {$report_path}", $out);
+                    system($command_wvs, $out);
+                    $wvs_safe_info = $this->generateWvsReport($v['id']);
+
+                    echo "\n" . $command_appscan;
+                    system($command_appscan, $out);
+                    $appscan_safe_info = $this->generateAppScanReport($v['id']);
+                    system('rm -rf *.xml');
+
+                    $this->generateAllReport($wvs_safe_info, $appscan_safe_info);
+
+                    if ($v['is_mail'] == 1) {
+                        $content = file_get_contents($report_path . '\\report_all.html');
+                        $this->sendMail($report_path . '\\report_all.html', $content, $safe_info_ext['user_mail']);
+                    }
+                } else {
+                    echo "\n" . $command;
+                    system("mkdir {$report_path}", $out);
+                    system($command, $out);
+                }
+
+                /*用户勾选了发送邮件，且选择扫描工具为wvs时，执行以下代码*/
+                if ($v['tool'] == 1) {
                     $this->generateWvsReport($v['id']);
                     if ($v['is_mail'] == 1) {
-                        $content = file_get_contents($report_path.'\\report.html');//获取最后15行的内容
-                        $this->sendMail($report_path.'\\report.docx', $content, $safe_info_ext['user_mail']);
+                        $content = file_get_contents($report_path . '\\report_wvs.html');
+                        $this->sendMail($report_path . '\\report_wvs.html', $content, $safe_info_ext['user_mail']);
                     }
                 }
                 /*用户勾选了发送邮件，且选择扫描工具为appscan时，执行以下代码*/
-                if ($v['tool'] == 2){
+                if ($v['tool'] == 2) {
                     $this->generateAppScanReport($v['id']);
-                    if($v['is_mail'] == 1){
-                        $content = file_get_contents($report_path.'\\report.html');//获取最后15行的内容
-                        $this->sendMail($report_path.'\\report.html', $content, $safe_info_ext['user_mail']);
+                    if ($v['is_mail'] == 1) {
+                        $content = file_get_contents($report_path . '\\report_appscan.html');
+                        $this->sendMail($report_path . '\\report_appscan.html', $content, $safe_info_ext['user_mail']);
                     }
                     exec('rm -rf *.xml');
                 }
@@ -141,179 +166,51 @@ class Scan
         }
     }
 
-    /**
-     * 获取文件最后几行内容的方法
-     * $filename为文件路径+文件名
-     * $n为获取内容的行数
-     */
-    public function getFileLastLines($filename, $n)
-    {
-        if (!$fp = fopen($filename, 'r')) {
-            echo "打开文件失败，请检查文件路径是否正确，路径和文件名不要包含中文";
-            return false;
-        }
-        $pos = -2;
-        $eof = "";
-        while ($n > 0) {
-            while ($eof != "\n") {
-                if (!fseek($fp, $pos, SEEK_END)) {
-                    $eof = fgetc($fp);
-                    $pos--;
-                } else {
-                    break;
-                }
-            }
-            $arr[] = fgets($fp);
-            $eof = "";
-            $n--;
-        }
-        unset($arr[0],$arr[1]);
-        /*由于获取内容是从最后一行开始的，故把每行内容存入数组后，对数组进行重新排序；重新排序完成后再转换为字符串*/
-        krsort($arr);
-        $str = implode("<br/>", $arr);
-        return $str;
-    }
-
-    public function queryWvsAlerts($url)
-    {
-        $conn = new COM("ADODB.Connection");
-        $connstr = "DRIVER={Microsoft Access Driver (*.mdb)}; DBQ=" . "D:\\WVS10\\vulnscanresults.mdb";
-        $conn->Open($connstr);
-        $scans_rs = $this->queryWvsScans($url);
-        $query = "select '" . $scans_rs[0]['starturl'] . "','" . $scans_rs[0]['servers'] . "','" . $scans_rs[0]['os'] . "','" .$scans_rs[0]['language'] . "',algroup,affects,severity,details,request,response from WVS_alerts where scid={$scans_rs[0]['scid']} and severity BETWEEN 1 and 3 ORDER by severity DESC ";
-        $rs = $conn->Execute($query);
-
-        $issues = array('starturl', 'servers', 'os','language', 'issues', 'affects', 'severity', 'details', 'request', 'response');
-
-        $content = array();
-        $j = 0;
-        while (!$rs->EOF) {
-            for ($i = 0; $i < $rs->Fields->count; $i++) {
-                @$content[$j][$issues[$i]] = $rs->Fields($i)->Value;
-            }
-            $j++;
-            $rs->MoveNext();
-        }
-        return $content;
-    }
-
-    public function queryWvsScans($url)
-    {
-        $conn = new COM("ADODB.Connection");
-        $connstr = "DRIVER={Microsoft Access Driver (*.mdb)}; DBQ=" . "D:\\WVS10\\vulnscanresults.mdb";
-        $conn->Open($connstr);
-        $query = "select top 1 a.scid,a.starturl,b.banner,b.os,b.technologies from WVS_scans a,WVS_servers b where a.starturl='" . $url . "' and a.serverid=b.serverid order by a.starttime desc";
-        $rs = $conn->Execute($query);
-
-        $table_scans = array('scid', 'starturl', 'servers', 'os','language');
-
-        $content = array();
-        $j = 0;
-        while (!$rs->EOF) {
-            for ($i = 0; $i < $rs->Fields->count; $i++) {
-                @$content[$j][$table_scans[$i]] = (string)$rs->Fields($i)->Value;
-            }
-            $j++;
-            $rs->MoveNext();
-        }
-        return $content;
-    }
+//    /**
+//     * 获取文件最后几行内容的方法
+//     * $filename为文件路径+文件名
+//     * $n为获取内容的行数
+//     */
+//    public function getFileLastLines($filename, $n)
+//    {
+//        if (!$fp = fopen($filename, 'r')) {
+//            echo "打开文件失败，请检查文件路径是否正确，路径和文件名不要包含中文";
+//            return false;
+//        }
+//        $pos = -2;
+//        $eof = "";
+//        while ($n > 0) {
+//            while ($eof != "\n") {
+//                if (!fseek($fp, $pos, SEEK_END)) {
+//                    $eof = fgetc($fp);
+//                    $pos--;
+//                } else {
+//                    break;
+//                }
+//            }
+//            $arr[] = fgets($fp);
+//            $eof = "";
+//            $n--;
+//        }
+//        unset($arr[0], $arr[1]);
+//        /*由于获取内容是从最后一行开始的，故把每行内容存入数组后，对数组进行重新排序；重新排序完成后再转换为字符串*/
+//        krsort($arr);
+//        $str = implode("<br/>", $arr);
+//        return $str;
+//    }
 
     public function generateWvsReport($id)
     {
-        $profile = ['1'=>'默认（均检测）','2'=>'AcuSensor传感器','3'=>'SQL盲注','4'=>'跨站点请求伪造','5'=>'目录和文件检查','6'=>'空（不使用任何检测）','7'=>'文件上传','8'=>'谷歌黑客数据库','9'=>'高风险警报','10'=>'网络脚本','11'=>'参数操纵','12'=>'SQL注入','13'=>'文本搜索','14'=>'弱口令','15'=>'Web应用程序','16'=>'跨站脚本攻击'];
-
-        $log = $this->getFileLastLines("E:\\yii\\web\\scanreport\\result_{$id}\\wvs_log.log", 16);
-
-        preg_match("/Start\ time.*\:\ (.*?)\r\n/U",$log,$starttime);
-        $starttime = $starttime[1];
-
-        preg_match("/Finish\ time.*\:\ (.*?)\r\n/U",$log,$finishtime);
-        $finishtime = $finishtime[1];
-
-        preg_match("/Scan\ time.*\:\ (.*?)\r\n/U",$log,$scantime);
-        $scantime = $scantime[1];
+        $profile = ['1' => '默认（均检测）', '2' => 'AcuSensor传感器', '3' => 'SQL盲注', '4' => '跨站点请求伪造', '5' => '目录和文件检查', '6' => '空（不使用任何检测）', '7' => '文件上传', '8' => '谷歌黑客数据库', '9' => '高风险警报', '10' => '网络脚本', '11' => '参数操纵', '12' => 'SQL注入', '13' => '文本搜索', '14' => '弱口令', '15' => 'Web应用程序', '16' => '跨站脚本攻击'];
 
         $conn = $this->connectDB();
+        $sql = 'SELECT id,url,profile FROM safe_list WHERE id = ' . $id;
+        $safe_list = $conn->query($sql)->fetchAll();
 
-        $sql = 'SELECT DISTINCT
-                    a.id,
-                    a.profile,
-                    a.url,
-                    b.servers,
-                    b.os,
-                    b.issues,
-                    CASE b.severity
-                WHEN 1 THEN
-                    \'低\'
-                WHEN 2 THEN
-                    \'中\'
-                WHEN 3 THEN
-                    \'高\'
-                END AS severity,
-                 b.affects,
-                 c.issue_ch,
-                 c.description,
-                 c.risk,
-                 c.suggestion
-                FROM
-                    safe_list a,
-                    safe_issues b,
-                    issues_lib c
-                WHERE
-                    a.id = b.safe_id
-                AND b.issues = c.issue_en
-                AND a.id = ' . $id;
-        $safe_issues = $conn->query($sql)->fetchAll();
-        $issues_arr = array();
-        $high = $mid = $low = 0;
-
-        if(!empty($safe_issues)){
-            foreach ($safe_issues as $k => $v){
-                if(!in_array($v['issues'],$issues_arr)){
-                    $issues_arr[] = $v['issues'];
-                    switch ($v['severity']){
-                        case '低':
-                            $low++;break;
-                        case '中':
-                            $mid++;break;
-                        case '高':
-                            $high++;break;
-                    }
-                }else{
-                    unset($safe_issues[$k]);
-                }
-            }
-        }
-        $safe_issues = array_values($safe_issues);
-
-        $no_lib = $conn->query('select distinct issues from safe_issues where issues not in (select issue_en from issues_lib) and safe_id='.$id)->fetchAll();
-        if(!empty($no_lib)){
-            $symbol = array(' "','" ',':','.',',',' ','(',')','[',']');
-            foreach ($no_lib as $issue_name){
-                $sql_affects_severity = 'select issues,group_concat(distinct affects) as affects,severity from safe_issues where safe_id='.$id.' and issues='."'".$issue_name['issues']."'";
-                $affects_severity = $conn->query($sql_affects_severity)->fetch();
-
-                $issue_name_str = strtolower(str_replace($symbol,'-',$affects_severity['issues']));
-                $url = 'https://www.acunetix.com/vulnerabilities/web/'.$issue_name_str;
-
-                unset($affects_severity[0],$affects_severity[1],$affects_severity[2]);
-                $safe_issues_web[] = array_merge($affects_severity,$this->getContentFromHTML($url));
-            }
-        }
-
-        if(!empty($safe_issues_web)){
-            foreach ($safe_issues_web as $v){
-                switch ($v['severity']){
-                    case 3:
-                        $high++;break;
-                    case 2:
-                        $mid++;break;
-                    case 1:
-                        $low++;break;
-                }
-            }
-        }
+        $wvs = new WVS();
+        $issues_info = @$wvs->getWvsIssue($safe_list[0]['url']);
+        $issues_info['summary']['id'] = $id;
+        $issues_info['summary']['profile'] = $profile[$safe_list[0]['profile']];
 
         $table_css = 'font-family:微软雅黑;font-size:14px;border-collapse: collapse;border-spacing:0;';
         $td_css = 'padding: 8px;border: 1px solid;width: 200px';
@@ -323,93 +220,75 @@ class Scan
         $content = '<html>';
         $content .= '<meta http-equiv="content-type" content="text/html;charset=utf8" />';
         $content .= '<body style="font-family:微软雅黑;font-size:14px;">';
-        $content .= '<span style="'.$header_css.'">美邦安全扫描平台测试报告（ID：'.$id.'）</span>';
+        $content .= '<span style="' . $header_css . '">美邦安全扫描平台测试报告（ID：' . $id . '）</span>';
         $content .= "<br/><br/>";
-        $content .= '<table style="'.$table_css.'">';
-        $content .= '<tr><th style="'.$th_css.'" colspan="2">扫描信息</th></tr>';
-        $content .= '<tr><td style="background-color:#efefef;'.$td_css.'">目标URL</td><td style="'.$td_css.'">'.$safe_issues[0]['url'].'</td></tr>';
-        $content .= '<tr><td style="background-color:#efefef;'.$td_css.'">开始时间</td><td style="'.$td_css.'">'.$starttime.'</td></tr>';
-        $content .= '<tr><td style="background-color:#efefef;'.$td_css.'">结束时间</td><td style="'.$td_css.'">'.$finishtime.'</td></tr>';
-        $content .= '<tr><td style="background-color:#efefef;'.$td_css.'">扫描时长</td><td style="'.$td_css.'">'.$scantime.'</td></tr>';
-        $content .= '<tr><td style="background-color:#efefef;'.$td_css.'">扫描模式</td><td style="'.$td_css.'">'.$profile[$safe_issues[0]['profile']].'</td></tr>';
-        $content .= '<tr><th style="'.$th_css.'" colspan="2">服务信息</th></tr>';
-        $content .= '<tr><td style="background-color:#efefef;'.$td_css.'">服务</td><td style="'.$td_css.'">'.$safe_issues[0]['servers'].'</td></tr>';
-        $content .= '<tr><td style="background-color:#efefef;'.$td_css.'">系统</td><td style="'.$td_css.'">'.$safe_issues[0]['os'].'</td></tr>';
-        $content .= '<tr><th style="'.$th_css.'" colspan="2">扫描结果</th></tr>';
-        $content_num = '<span style="font-size: 15px;font-weight:bold">'.'总数：'.($high+$mid+$low)."</span><br/>".
-                       '<span style="font-size: 15px;color:red">'.'高：'.$high."</span><br/>".
-                       '<span style="font-size: 15px;color:orange">'.'中：'.$mid."</span><br/>".
-                       '<span style="font-size: 15px;color:deepskyblue">'.'低：'.$low."</span><br/>";
-        $content .= '<tr><td style="background-color:#efefef;'.$td_css.'">问题数量</td><td style="'.$td_css.'">'.$content_num.'</td></tr>';
+        $content .= '<table style="' . $table_css . '">';
+        $content .= '<tr><th style="' . $th_css . '" colspan="2">扫描信息</th></tr>';
+        $content .= '<tr><td style="background-color:#efefef;' . $td_css . '">目标URL</td><td style="' . $td_css . '">' . $issues_info['summary']['url'] . '</td></tr>';
+        $content .= '<tr><td style="background-color:#efefef;' . $td_css . '">开始时间</td><td style="' . $td_css . '">' . $issues_info['summary']['starttime'] . '</td></tr>';
+        $content .= '<tr><td style="background-color:#efefef;' . $td_css . '">结束时间</td><td style="' . $td_css . '">' . $issues_info['summary']['finishtime'] . '</td></tr>';
+        $content .= '<tr><td style="background-color:#efefef;' . $td_css . '">扫描模式</td><td style="' . $td_css . '">' . $issues_info['summary']['profile'] . '</td></tr>';
+        $content .= '<tr><th style="' . $th_css . '" colspan="2">服务信息</th></tr>';
+        $content .= '<tr><td style="background-color:#efefef;' . $td_css . '">服务</td><td style="' . $td_css . '">' . $issues_info['summary']['servers'] . '</td></tr>';
+        $content .= '<tr><td style="background-color:#efefef;' . $td_css . '">系统</td><td style="' . $td_css . '">' . $issues_info['summary']['os'] . '</td></tr>';
+        $content .= '<tr><td style="background-color:#efefef;' . $td_css . '">语言</td><td style="' . $td_css . '">' . $issues_info['summary']['language'] . '</td></tr>';
+        $content .= '<tr><th style="' . $th_css . '" colspan="2">扫描结果</th></tr>';
+        $content_num = '<span style="font-size: 15px;font-weight:bold">' . '总数：' . $issues_info['summary']['level_count']['count'] . "</span><br/>" .
+            '<span style="font-size: 15px;color:red">' . '高：' . $issues_info['summary']['level_count']['high'] . "</span><br/>" .
+            '<span style="font-size: 15px;color:orange">' . '中：' . $issues_info['summary']['level_count']['mid'] . "</span><br/>" .
+            '<span style="font-size: 15px;color:deepskyblue">' . '低：' . $issues_info['summary']['level_count']['low'] . "</span><br/>";
+        $content .= '<tr><td style="background-color:#efefef;' . $td_css . '">问题数量</td><td style="' . $td_css . '">' . $content_num . '</td></tr>';
         $content .= '</table>';
         $content .= "<br/><br/>";
         $content .= '<div>';
         $content .= '<span style="font-size: 18px;font-weight:bold">安全问题汇总：</span><br/>';
         $content .= "<hr/>";
-        foreach ($issues_arr as $k => $v){
-            $sql_affects = 'select group_concat(distinct affects) as affects from safe_issues where safe_id='.$id.' and issues='."'".$v."'";
-            $affects = $conn->query($sql_affects)->fetch();
-            $affects_arr[$k] = $affects['affects'];
-        }
 
-        for($i=1;$i<=count($issues_arr);$i++){
-            $content .= '<span style="font-size: 16px;font-weight:bold">'.$i.". ".$safe_issues[$i-1]['issue_ch'].'</span><br/>';
+        $j = 1;
+        foreach ($issues_info['content'] as $key => $issue_content){
+            $query_issues_lib = "SELECT issue_ch,description,risk,suggestion FROM issues_lib WHERE issue_en = '" . $issue_content['issues'] ."'";
+            $issues_lib = $conn->query($query_issues_lib)->fetchAll();
+            if(!empty($issues_lib)){
+                $issues_info['content'][$key]['issues'] = $issue_content['issues'] = $issues_lib[0]['issue_ch'];
+                $issues_info['content'][$key]['desc_text'] = $issue_content['desc_text'] = $issues_lib[0]['description'];
+                $issues_info['content'][$key]['impact_text'] = $issue_content['impact_text'] = $issues_lib[0]['risk'];
+                $issues_info['content'][$key]['recm_text'] = $issue_content['recm_text'] = $issues_lib[0]['suggestion'];
+            }
+
+            $content .= '<span style="font-size: 16px;font-weight:bold">' . $j . ". " . $issue_content['issues'] . '</span><br/>';
             $severity = '';
-            switch ($safe_issues[$i-1]['severity']){
+            switch ($issue_content['severity']) {
                 case '低':
-                    $severity = '<span style="color:deepskyblue">低</span>';break;
+                    $severity = '<span style="color:deepskyblue">低</span>';
+                    break;
                 case '中':
-                    $severity = '<span style="color:orange">中</span>';break;
+                    $severity = '<span style="color:orange">中</span>';
+                    break;
                 case '高':
-                    $severity = '<span style="color:red">高</span>';break;
+                    $severity = '<span style="color:red">高</span>';
+                    break;
             }
-            $content .= '<span style="font-weight:bold">风险等级：</span>'.$severity.'<br/>';
-            $content .= '<span style="font-weight:bold">描述：</span>'.(!empty($safe_issues[$i-1]['description'])?$safe_issues[$i-1]['description']:'待分析').'<br/>';
-            $content .= '<span style="font-weight:bold">影响内容：</span>'.(!empty($affects_arr[$i-1])?$affects_arr[$i-1]:'待分析').'<br/>';
-            $content .= '<span style="font-weight:bold">风险：</span>'.(!empty($safe_issues[$i-1]['risk'])?$safe_issues[$i-1]['risk']:'待分析').'<br/>';
-            $content .= '<span style="font-weight:bold">建议：</span>'.(!empty($safe_issues[$i-1]['suggestion'])?$safe_issues[$i-1]['suggestion']:'待分析').'<br/>';
+            $content .= '<span style="font-weight:bold">风险等级：</span>' . $severity . '<br/>';
+            $content .= '<span style="font-weight:bold">描述：</span>' . (!empty($issue_content['desc_text']) ? $issue_content['desc_text'] : '待分析') . '<br/>';
+            $content .= '<span style="font-weight:bold">影响内容：</span>' . (!empty($issue_content['affects']) ? $issue_content['affects'] : '待分析') . '<br/>';
+            $content .= '<span style="font-weight:bold">风险：</span>' . (!empty($issue_content['impact_text']) ? $issue_content['impact_text'] : '待分析') . '<br/>';
+            $content .= '<span style="font-weight:bold">建议：</span>' . (!empty($issue_content['recm_text']) ? $issue_content['recm_text'] : '待分析') . '<br/>';
             $content .= "<br/><br/>";
-        }
-
-        if(!empty($safe_issues_web)){
-            for($i=1;$i<=count($safe_issues_web);$i++){
-                $severity = '';
-                switch ($safe_issues_web[$i-1]['severity']){
-                    case 3:
-                        $severity = '<span style="color:red">高</span>';break;
-                    case 2:
-                        $severity = '<span style="color:orange">中</span>';break;
-                    case 1:
-                        $severity = '<span style="color:deepskyblue">低</span>';break;
-                }
-                if(!empty($safe_issues_web[$i-1]['issues'])){
-                    $content .= '<span style="font-size: 16px;font-weight:bold">'.($i+count($issues_arr)).". ".$safe_issues_web[$i-1]['issues'].'</span><br/>';
-                    $content .= '<span style="font-weight:bold">风险等级：</span>'.(!empty($severity)?$severity:'待分析').'<br/>';
-                    $content .= '<span style="font-weight:bold">描述：</span>'.(!empty($safe_issues_web[$i-1][0])?strip_tags($safe_issues_web[$i-1][0]):'待分析').'<br/>';
-                    $content .= '<span style="font-weight:bold">影响内容：</span>'.(!empty($safe_issues_web[$i-1]['affects'])?strip_tags($safe_issues_web[$i-1]['affects']):'待分析').'<br/>';
-                    $content .= '<span style="font-weight:bold">建议：</span>'.(!empty($safe_issues_web[$i-1][1])?strip_tags($safe_issues_web[$i-1][1]):'待分析').'<br/>';
-                    $content .= "<br/><br/>";
-                }else{
-                    unset($safe_issues_web[$i-1]);
-                    $safe_issues_web = array_values($safe_issues_web);
-                    $i--;
-                }
-            }
+            $j++;
         }
 
         $content .= '</div>';
         $content .= '</body>';
         $content .= '<html>';
 
-        $fp = fopen("E:\\yii\\web\\scanreport\\result_{$id}\\report.html","w");
-        fwrite($fp,$content);
+        $fp = fopen("E:\\yii\\web\\scanreport\\result_{$id}\\report_wvs.html", "w");
+        fwrite($fp, $content);
         fclose($fp);
+        return $issues_info;
     }
 
     public function generateAppScanReport($id)
     {
-        require_once 'AnalisysPDF.php';
-
         $appscan = new AppScan();
         $issues_info = $appscan->getAppScanIssue($id);
 
@@ -421,47 +300,51 @@ class Scan
         $content = '<html>';
         $content .= '<meta http-equiv="content-type" content="text/html;charset=utf8" />';
         $content .= '<body style="font-family:微软雅黑;font-size:14px;">';
-        $content .= '<span style="'.$header_css.'">美邦安全扫描平台测试报告（ID：'.$id.'）</span>';
+        $content .= '<span style="' . $header_css . '">美邦安全扫描平台测试报告（ID：' . $id . '）</span>';
         $content .= "<br/><br/>";
-        $content .= '<table style="'.$table_css.'">';
-        $content .= '<tr><th style="'.$th_css.'" colspan="2">扫描信息</th></tr>';
-        $content .= '<tr><td style="background-color:#efefef;'.$td_css.'">目标URL</td><td style="'.$td_css.'">'.$issues_info['summary']['url'].'</td></tr>';
-        $content .= '<tr><td style="background-color:#efefef;'.$td_css.'">开始时间</td><td style="'.$td_css.'">'.$issues_info['summary']['start_time'].'</td></tr>';
-        $content .= '<tr><td style="background-color:#efefef;'.$td_css.'">扫描模式</td><td>默认</td></tr>';
-        $content .= '<tr><th style="'.$th_css.'" colspan="2">服务信息</th></tr>';
-        $content .= '<tr><td style="background-color:#efefef;'.$td_css.'">服务</td><td style="'.$td_css.'">'.(($issues_info['summary']['server'] == 'Unknown')?'未知':$issues_info['summary']['server']).'</td></tr>';
-        $content .= '<tr><td style="background-color:#efefef;'.$td_css.'">系统</td><td style="'.$td_css.'">'.(($issues_info['summary']['os'] == 'Unknown')?'未知':$issues_info['summary']['os']).'</td></tr>';
-        $content .= '<tr><th style="'.$th_css.'" colspan="2">扫描结果</th></tr>';
-        $content_num = '<span style="font-size: 15px;font-weight:bold">'.'总数：'.($issues_info['summary']['high']+$issues_info['summary']['mid']+$issues_info['summary']['low']+$issues_info['summary']['info'])."</span><br/>".
-                       '<span style="font-size: 15px;color:red">'.'高：'.$issues_info['summary']['high']."</span><br/>".
-                       '<span style="font-size: 15px;color:orange">'.'中：'.$issues_info['summary']['mid']."</span><br/>".
-                       '<span style="font-size: 15px;color:deepskyblue">'.'低：'.$issues_info['summary']['low']."</span><br/>".
-                       '<span style="font-size: 15px;color:deepskyblue">'.'参考：'.$issues_info['summary']['info']."</span><br/>";
-        $content .= '<tr><td style="background-color:#efefef;'.$td_css.'">问题数量</td><td style="'.$td_css.'">'.$content_num.'</td></tr>';
+        $content .= '<table style="' . $table_css . '">';
+        $content .= '<tr><th style="' . $th_css . '" colspan="2">扫描信息</th></tr>';
+        $content .= '<tr><td style="background-color:#efefef;' . $td_css . '">目标URL</td><td style="' . $td_css . '">' . $issues_info['summary']['url'] . '</td></tr>';
+        $content .= '<tr><td style="background-color:#efefef;' . $td_css . '">开始时间</td><td style="' . $td_css . '">' . $issues_info['summary']['start_time'] . '</td></tr>';
+        $content .= '<tr><td style="background-color:#efefef;' . $td_css . '">扫描模式</td><td>默认</td></tr>';
+        $content .= '<tr><th style="' . $th_css . '" colspan="2">服务信息</th></tr>';
+        $content .= '<tr><td style="background-color:#efefef;' . $td_css . '">服务</td><td style="' . $td_css . '">' . (($issues_info['summary']['server'] == 'Unknown') ? '未知' : $issues_info['summary']['server']) . '</td></tr>';
+        $content .= '<tr><td style="background-color:#efefef;' . $td_css . '">系统</td><td style="' . $td_css . '">' . (($issues_info['summary']['os'] == 'Unknown') ? '未知' : $issues_info['summary']['os']) . '</td></tr>';
+        $content .= '<tr><th style="' . $th_css . '" colspan="2">扫描结果</th></tr>';
+        $content_num = '<span style="font-size: 15px;font-weight:bold">' . '总数：' . $issues_info['summary']['level_count']['count'] . "</span><br/>" .
+            '<span style="font-size: 15px;color:red">' . '高：' . $issues_info['summary']['level_count']['high'] . "</span><br/>" .
+            '<span style="font-size: 15px;color:orange">' . '中：' . $issues_info['summary']['level_count']['mid'] . "</span><br/>" .
+            '<span style="font-size: 15px;color:deepskyblue">' . '低：' . $issues_info['summary']['level_count']['low'] . "</span><br/>" .
+            '<span style="font-size: 15px;color:deepskyblue">' . '参考：' . $issues_info['summary']['level_count']['info'] . "</span><br/>";
+        $content .= '<tr><td style="background-color:#efefef;' . $td_css . '">问题数量</td><td style="' . $td_css . '">' . $content_num . '</td></tr>';
         $content .= '</table>';
         $content .= "<br/><br/>";
         $content .= '<div>';
         $content .= '<span style="font-size: 18px;font-weight:bold">安全问题汇总：</span><br/>';
         $content .= "<hr/>";
 
-        for($i=1;$i<=count($issues_info['details']);$i++){
-            $content .= '<span style="font-size: 16px;font-weight:bold">'.$i.". ".$issues_info['details'][$i-1]['issue_name'].'</span><br/>';
+        for ($i = 1; $i <= count($issues_info['content']); $i++) {
+            $content .= '<span style="font-size: 16px;font-weight:bold">' . $i . ". " . $issues_info['content'][$i - 1]['summary'] . '</span><br/>';
             $severity = '';
-            switch ($issues_info['details'][$i-1]['severity']){
-                case '参考信息':
-                    $severity = '<span style="color:black">参考</span>';break;
+            switch ($issues_info['content'][$i - 1]['level']) {
+                case '参':
+                    $severity = '<span style="color:black">参考</span>';
+                    break;
                 case '低':
-                    $severity = '<span style="color:deepskyblue">低</span>';break;
+                    $severity = '<span style="color:deepskyblue">低</span>';
+                    break;
                 case '中':
-                    $severity = '<span style="color:orange">中</span>';break;
+                    $severity = '<span style="color:orange">中</span>';
+                    break;
                 case '高':
-                    $severity = '<span style="color:red">高</span>';break;
+                    $severity = '<span style="color:red">高</span>';
+                    break;
             }
-            $content .= '<span style="font-weight:bold">风险等级：</span>'.$severity.'<br/>';
-            $content .= '<span style="font-weight:bold">描述：</span>'.(!empty($issues_info['details'][$i-1]['desc'])?$issues_info['details'][$i-1]['desc']:'待分析').'<br/>';
-            $content .= '<span style="font-weight:bold">影响内容：</span>'.(!empty($issues_info['details'][$i-1]['affects'])?$issues_info['details'][$i-1]['affects']:'待分析').'<br/>';
-            $content .= '<span style="font-weight:bold">风险：</span>'.(!empty($issues_info['details'][$i-1]['risk'])?$issues_info['details'][$i-1]['risk']:'待分析').'<br/>';
-            $content .= '<span style="font-weight:bold">建议：</span>'.(!empty($issues_info['details'][$i-1]['suggestion'])?$issues_info['details'][$i-1]['suggestion']:'待分析').'<br/>';
+            $content .= '<span style="font-weight:bold">风险等级：</span>' . $severity . '<br/>';
+            $content .= '<span style="font-weight:bold">描述：</span>' . (!empty($issues_info['content'][$i - 1]['desc']) ? $issues_info['content'][$i - 1]['desc'] : '待分析') . '<br/>';
+            $content .= '<span style="font-weight:bold">影响内容：</span>' . (!empty($issues_info['content'][$i - 1]['affects']) ? $issues_info['content'][$i - 1]['affects'] : '待分析') . '<br/>';
+            $content .= '<span style="font-weight:bold">风险：</span>' . (!empty($issues_info['content'][$i - 1]['risk']) ? $issues_info['content'][$i - 1]['risk'] : '待分析') . '<br/>';
+            $content .= '<span style="font-weight:bold">建议：</span>' . (!empty($issues_info['content'][$i - 1]['suggestion']) ? $issues_info['content'][$i - 1]['suggestion'] : '待分析') . '<br/>';
             $content .= "<br/><br/>";
         }
 
@@ -469,34 +352,154 @@ class Scan
         $content .= '</body>';
         $content .= '<html>';
 
-        $fp = fopen("E:\\yii\\web\\scanreport\\result_{$id}\\report.html","w");
-        fwrite($fp,$content);
+        $fp = fopen("E:\\yii\\web\\scanreport\\result_{$id}\\report_appscan.html", "w");
+        fwrite($fp, $content);
+        fclose($fp);
+        return $issues_info;
+    }
+
+    public function generateAllReport($wvs_safe_info, $appscan_safe_info)
+    {
+        require_once 'LCS.php';
+        $lcs = new LCS();
+
+        foreach ($wvs_safe_info['content'] as $wvs_k => $wvs_v){
+            foreach ($appscan_safe_info['content'] as $app_k => $app_v){
+                //返回相似度
+                $trans = $this->translateContent($wvs_v['issues']);
+                $similar_per = $lcs->getSimilar($trans,$app_v['summary']);
+                var_dump($trans.'-------'.$app_v['summary'].'------------'.$similar_per."\n\n\n");
+                if($similar_per >= 0.6){
+                    switch ($wvs_safe_info['content'][$wvs_k]['level']){
+                        case '高':
+                            $wvs_safe_info['summary']['level_count']['high']--;
+                            $wvs_safe_info['summary']['level_count']['count']--;
+                            break;
+                        case '中':
+                            $wvs_safe_info['summary']['level_count']['mid']--;
+                            $wvs_safe_info['summary']['level_count']['count']--;
+                            break;
+                        case '低':
+                            $wvs_safe_info['summary']['level_count']['low']--;
+                            $wvs_safe_info['summary']['level_count']['count']--;
+                            break;
+                    }
+                    unset($wvs_safe_info['content'][$wvs_k]);
+                    break;
+                }
+            }
+        }
+
+        $table_css = 'font-family:微软雅黑;font-size:14px;border-collapse: collapse;border-spacing:0;';
+        $td_css = 'padding: 8px;border: 1px solid;width: 200px';
+        $th_css = 'background-color:#c0c0c0;font-weight:bold;adding: 8px;border: 1px solid;text-align:left';
+        $header_css = 'cursor: default;font-family: 微软雅黑;font-size: 30px;position: relative;';
+
+        $content = '<html>';
+        $content .= '<meta http-equiv="content-type" content="text/html;charset=utf8" />';
+        $content .= '<body style="font-family:微软雅黑;font-size:14px;">';
+        $content .= '<span style="' . $header_css . '">美邦安全扫描平台测试报告（ID：' . $wvs_safe_info['summary']['id'] . '）</span>';
+        $content .= "<br/><br/>";
+        $content .= '<table style="' . $table_css . '">';
+        $content .= '<tr><th style="' . $th_css . '" colspan="2">扫描信息</th></tr>';
+        $content .= '<tr><td style="background-color:#efefef;' . $td_css . '">目标URL</td><td style="' . $td_css . '">' . $wvs_safe_info['summary']['url'] . '</td></tr>';
+        $content .= '<tr><td style="background-color:#efefef;' . $td_css . '">开始时间</td><td style="' . $td_css . '">' . $wvs_safe_info['summary']['starttime'] . '</td></tr>';
+        $content .= '<tr><td style="background-color:#efefef;' . $td_css . '">结束时间</td><td style="' . $td_css . '">' . $wvs_safe_info['summary']['finishtime'] . '</td></tr>';
+        $content .= '<tr><td style="background-color:#efefef;' . $td_css . '">扫描模式</td><td style="' . $td_css . '">' . $wvs_safe_info['summary']['profile'] . '</td></tr>';
+        $content .= '<tr><th style="' . $th_css . '" colspan="2">服务信息</th></tr>';
+        $content .= '<tr><td style="background-color:#efefef;' . $td_css . '">服务</td><td style="' . $td_css . '">' . $wvs_safe_info['summary']['servers'] . '</td></tr>';
+        $content .= '<tr><td style="background-color:#efefef;' . $td_css . '">系统</td><td style="' . $td_css . '">' . $wvs_safe_info['summary']['os'] . '</td></tr>';
+        $content .= '<tr><td style="background-color:#efefef;' . $td_css . '">语言</td><td style="' . $td_css . '">' . $wvs_safe_info['summary']['language'] . '</td></tr>';
+        $content .= '<tr><th style="' . $th_css . '" colspan="2">扫描结果</th></tr>';
+        $content_num = '<span style="font-size: 15px;font-weight:bold">' . '总数：' . (count($wvs_safe_info['content']) + count($appscan_safe_info['content'])) . "</span><br/>" .
+            '<span style="font-size: 15px;color:red">' . '高：' . ($wvs_safe_info['summary']['level_count']['high'] + $appscan_safe_info['summary']['level_count']['high']) . "</span><br/>" .
+            '<span style="font-size: 15px;color:orange">' . '中：' . ($wvs_safe_info['summary']['level_count']['mid'] + $appscan_safe_info['summary']['level_count']['mid']) . "</span><br/>" .
+            '<span style="font-size: 15px;color:deepskyblue">' . '低：' . ($wvs_safe_info['summary']['level_count']['low'] + $appscan_safe_info['summary']['level_count']['low']) . "</span><br/>" .
+            '<span style="font-size: 15px;color:black">' . '参考：' . $appscan_safe_info['summary']['level_count']['info'] . "</span><br/>";
+        $content .= '<tr><td style="background-color:#efefef;' . $td_css . '">问题数量</td><td style="' . $td_css . '">' . $content_num . '</td></tr>';
+        $content .= '</table>';
+        $content .= "<br/><br/>";
+        $content .= '<div>';
+        $content .= '<span style="font-size: 18px;font-weight:bold">安全问题汇总：</span><br/>';
+        $content .= "<hr/>";
+
+        $j = 1;
+        foreach ($wvs_safe_info['content'] as $key => $issue_content){
+            $content .= '<span style="font-size: 16px;font-weight:bold">' . $j . ". " . $issue_content['issues'] . '</span><br/>';
+            $severity = '';
+            switch ($issue_content['severity']) {
+                case '低':
+                    $severity = '<span style="color:deepskyblue">低</span>';
+                    break;
+                case '中':
+                    $severity = '<span style="color:orange">中</span>';
+                    break;
+                case '高':
+                    $severity = '<span style="color:red">高</span>';
+                    break;
+            }
+            $content .= '<span style="font-weight:bold">风险等级：</span>' . $severity . '<br/>';
+            $content .= '<span style="font-weight:bold">描述：</span>' . (!empty($issue_content['desc_text']) ? $issue_content['desc_text'] : '待分析') . '<br/>';
+            $content .= '<span style="font-weight:bold">影响内容：</span>' . (!empty($issue_content['affects']) ? $issue_content['affects'] : '待分析') . '<br/>';
+            $content .= '<span style="font-weight:bold">风险：</span>' . (!empty($issue_content['impact_text']) ? $issue_content['impact_text'] : '待分析') . '<br/>';
+            $content .= '<span style="font-weight:bold">建议：</span>' . (!empty($issue_content['recm_text']) ? $issue_content['recm_text'] : '待分析') . '<br/>';
+            $content .= "<br/><br/>";
+            $j++;
+        }
+
+        for ($i = 1; $i <= count($appscan_safe_info['content']); $i++) {
+            $content .= '<span style="font-size: 16px;font-weight:bold">' . ($i+ $wvs_safe_info['summary']['level_count']['count']). ". " . $appscan_safe_info['content'][$i - 1]['summary'] . '</span><br/>';
+            $severity = '';
+            switch ($appscan_safe_info['content'][$i - 1]['level']) {
+                case '参':
+                    $severity = '<span style="color:black">参考</span>';
+                    break;
+                case '低':
+                    $severity = '<span style="color:deepskyblue">低</span>';
+                    break;
+                case '中':
+                    $severity = '<span style="color:orange">中</span>';
+                    break;
+                case '高':
+                    $severity = '<span style="color:red">高</span>';
+                    break;
+            }
+            $content .= '<span style="font-weight:bold">风险等级：</span>' . $severity . '<br/>';
+            $content .= '<span style="font-weight:bold">描述：</span>' . (!empty($appscan_safe_info['content'][$i - 1]['desc']) ? $appscan_safe_info['content'][$i - 1]['desc'] : '待分析') . '<br/>';
+            $content .= '<span style="font-weight:bold">影响内容：</span>' . (!empty($appscan_safe_info['content'][$i - 1]['affects']) ? $appscan_safe_info['content'][$i - 1]['affects'] : '待分析') . '<br/>';
+            $content .= '<span style="font-weight:bold">风险：</span>' . (!empty($appscan_safe_info['content'][$i - 1]['risk']) ? $appscan_safe_info['content'][$i - 1]['risk'] : '待分析') . '<br/>';
+            $content .= '<span style="font-weight:bold">建议：</span>' . (!empty($appscan_safe_info['content'][$i - 1]['suggestion']) ? $appscan_safe_info['content'][$i - 1]['suggestion'] : '待分析') . '<br/>';
+            $content .= "<br/><br/>";
+        }
+
+        $content .= '</div>';
+        $content .= '</body>';
+        $content .= '<html>';
+
+        $fp = fopen("E:\\yii\\web\\scanreport\\result_{$wvs_safe_info['summary']['id']}\\report_all.html", "w");
+        fwrite($fp, $content);
         fclose($fp);
     }
 
-    public function getContentFromHTML($url)
+    public function translateContent($content)
     {
-
-        $ch = curl_init();
-        curl_setopt($ch,CURLOPT_URL,$url);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);//跳过SSL证书检查
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($ch,CURLOPT_HEADER,0);
-        $html = curl_exec($ch);
-        curl_close($ch);
-
-        if($html){
-            $doc = new DOMDocument();
-            @$doc->loadHTML($html);
-
-            foreach( ( new DOMXPath( $doc ) )->query( '//*[@class="panel-body"]' )
-                     as $element )
-                $result[] = $doc->saveHTML( $element );
-
-            return $result;
+        if(!preg_match('/[\x{4e00}-\x{9fa5}]/u', $content)){
+            $url = 'http://fanyi.youdao.com/openapi.do?keyfrom=mb-safe-platform&key=1746923643&type=data&doctype=json&version=1.1&q='.$content;
+            $ch = curl_init ();
+            curl_setopt ( $ch, CURLOPT_URL, $url );
+            curl_setopt ( $ch, CURLOPT_RETURNTRANSFER, 1 );
+            curl_setopt ( $ch, CURLOPT_CONNECTTIMEOUT, 10 );
+            curl_setopt ( $ch, CURLOPT_POST, 1 ); //启用POST提交
+            $file_contents = curl_exec ( $ch );
+            curl_close ( $ch );
+            if($file_contents){
+                $wvs_translate_obj = json_decode($file_contents);
+                $ret = $wvs_translate_obj->translation[0];
+            }
         }else{
-            return array();
+            $ret = $content;
         }
+        return $ret;
     }
 }
 
