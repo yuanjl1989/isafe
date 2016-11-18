@@ -58,7 +58,7 @@ class Scan
                     $command_main = "{$wvs_console} /Scan {$v['url']} /Profile {$scan_profile[$v['profile']]} /Save /GenerateReport /ReportFormat PDF /SaveFolder {$report_path}";
                     $command_mail = " /EmailAddress {$safe_info_ext['user_mail']}";
                     $command_auth = " --HtmlAuthUser={$v['login_username']} --HtmlAuthPass={$v['login_password']}";
-                    $command_ext = " --ScanningMode={$scan_mode[$v['mode']]} --abortscanafter=60 >{$report_path}\\wvs_log.log";
+                    $command_ext = " --ScanningMode={$scan_mode[$v['mode']]} --abortscanafter=30 >{$report_path}\\wvs_log.log";
 
                     if (!empty($v['login_username']) && !empty($v['login_password'])) {
                         $command = $command_main . $command_mail . $command_auth . $command_ext;
@@ -245,14 +245,19 @@ class Scan
         $content .= "<hr/>";
 
         $j = 1;
-        foreach ($issues_info['content'] as $key => $issue_content){
-            $query_issues_lib = "SELECT issue_ch,description,risk,suggestion FROM issues_lib WHERE issue_en = '" . $issue_content['issues'] ."'";
+        foreach ($issues_info['content'] as $key => $issue_content) {
+            $query_issues_lib = "SELECT issue_ch,description,risk,suggestion FROM issues_lib WHERE issue_en = '" . $issue_content['issues'] . "'";
             $issues_lib = $conn->query($query_issues_lib)->fetchAll();
-            if(!empty($issues_lib)){
+            if (!empty($issues_lib)) {
                 $issues_info['content'][$key]['issues'] = $issue_content['issues'] = $issues_lib[0]['issue_ch'];
                 $issues_info['content'][$key]['desc_text'] = $issue_content['desc_text'] = $issues_lib[0]['description'];
                 $issues_info['content'][$key]['impact_text'] = $issue_content['impact_text'] = $issues_lib[0]['risk'];
                 $issues_info['content'][$key]['recm_text'] = $issue_content['recm_text'] = $issues_lib[0]['suggestion'];
+            } else {
+                $issues_info['content'][$key]['issues'] = $issue_content['issues'] = $this->translateLongContent($issue_content['issues']);
+                $issues_info['content'][$key]['desc_text'] = $issue_content['desc_text'] = $this->translateLongContent($issue_content['desc_text']);
+                $issues_info['content'][$key]['impact_text'] = $issue_content['impact_text'] = $this->translateLongContent($issue_content['impact_text']);
+                $issues_info['content'][$key]['recm_text'] = $issue_content['recm_text'] = $this->translateLongContent($issue_content['recm_text']);
             }
 
             $content .= '<span style="font-size: 16px;font-weight:bold">' . $j . ". " . $issue_content['issues'] . '</span><br/>';
@@ -363,14 +368,13 @@ class Scan
         require_once 'LCS.php';
         $lcs = new LCS();
 
-        foreach ($wvs_safe_info['content'] as $wvs_k => $wvs_v){
-            foreach ($appscan_safe_info['content'] as $app_k => $app_v){
+        foreach ($wvs_safe_info['content'] as $wvs_k => $wvs_v) {
+            foreach ($appscan_safe_info['content'] as $app_k => $app_v) {
                 //返回相似度
-                $trans = $this->translateContent($wvs_v['issues']);
-                $similar_per = $lcs->getSimilar($trans,$app_v['summary']);
-                var_dump($trans.'-------'.$app_v['summary'].'------------'.$similar_per."\n\n\n");
-                if($similar_per >= 0.6){
-                    switch ($wvs_safe_info['content'][$wvs_k]['level']){
+                $similar_per = $lcs->getSimilar($wvs_v['issues'], $app_v['summary']);
+                var_dump($wvs_v['issues'] . '-------' . $app_v['summary'] . '------------' . $similar_per . "\n\n\n");
+                if ($similar_per >= 0.6) {
+                    switch ($wvs_safe_info['content'][$wvs_k]['level']) {
                         case '高':
                             $wvs_safe_info['summary']['level_count']['high']--;
                             $wvs_safe_info['summary']['level_count']['count']--;
@@ -424,7 +428,7 @@ class Scan
         $content .= "<hr/>";
 
         $j = 1;
-        foreach ($wvs_safe_info['content'] as $key => $issue_content){
+        foreach ($wvs_safe_info['content'] as $key => $issue_content) {
             $content .= '<span style="font-size: 16px;font-weight:bold">' . $j . ". " . $issue_content['issues'] . '</span><br/>';
             $severity = '';
             switch ($issue_content['severity']) {
@@ -448,7 +452,7 @@ class Scan
         }
 
         for ($i = 1; $i <= count($appscan_safe_info['content']); $i++) {
-            $content .= '<span style="font-size: 16px;font-weight:bold">' . ($i+ $wvs_safe_info['summary']['level_count']['count']). ". " . $appscan_safe_info['content'][$i - 1]['summary'] . '</span><br/>';
+            $content .= '<span style="font-size: 16px;font-weight:bold">' . ($i + $wvs_safe_info['summary']['level_count']['count']) . ". " . $appscan_safe_info['content'][$i - 1]['summary'] . '</span><br/>';
             $severity = '';
             switch ($appscan_safe_info['content'][$i - 1]['level']) {
                 case '参':
@@ -483,20 +487,40 @@ class Scan
 
     public function translateContent($content)
     {
-        if(!preg_match('/[\x{4e00}-\x{9fa5}]/u', $content)){
-            $url = 'http://fanyi.youdao.com/openapi.do?keyfrom=mb-safe-platform&key=1746923643&type=data&doctype=json&version=1.1&q='.$content;
-            $ch = curl_init ();
-            curl_setopt ( $ch, CURLOPT_URL, $url );
-            curl_setopt ( $ch, CURLOPT_RETURNTRANSFER, 1 );
-            curl_setopt ( $ch, CURLOPT_CONNECTTIMEOUT, 10 );
-            curl_setopt ( $ch, CURLOPT_POST, 1 ); //启用POST提交
-            $file_contents = curl_exec ( $ch );
-            curl_close ( $ch );
-            if($file_contents){
-                $wvs_translate_obj = json_decode($file_contents);
-                $ret = $wvs_translate_obj->translation[0];
+        $url = 'http://fanyi.youdao.com/openapi.do?keyfrom=mb-safe-platform&key=1746923643&type=data&doctype=json&version=1.1&q=' . $content;
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($ch, CURLOPT_HEADER, 0);
+        $file_contents = curl_exec($ch);
+        if(!$file_contents){
+            $file_contents = curl_exec($ch);
+        }
+        curl_close($ch);
+        if ($file_contents) {
+            $wvs_translate_obj = json_decode($file_contents);
+            $ret = @$wvs_translate_obj->translation[0];
+        }
+        return isset($ret) ? $ret : $content;
+    }
+
+    public function translateLongContent($content)
+    {
+        if (!preg_match('/[\x{4e00}-\x{9fa5}]/u', $content)) {
+            if (strlen($content) > 200) {
+                $ret = $translate_split = array();
+                $len = strlen($content);
+                for ($i = 0; $i < $len; $i += 200) {
+                    $ret[] = substr($content, $i, 200);
+                }
+                foreach ($ret as $split_content) {
+                    $translate_split[] = $this->translateContent(urlencode($split_content));
+                }
+                $ret = implode('', $translate_split);
+            } else {
+                $ret = $this->translateContent(urlencode($content));
             }
-        }else{
+        } else {
             $ret = $content;
         }
         return $ret;

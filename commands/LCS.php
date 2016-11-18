@@ -59,9 +59,9 @@ class LCS {
         }
     }
 }
-//
+
 //$lcs = new LCS();
 ////返回最长公共子序列
 //echo $lcs->getLCS("hello word","hello china");
 ////返回相似度
-//echo $lcs->getSimilar("吉林禽业公司火灾已致112人遇难","吉林宝源丰禽业公司火灾已致112人遇难");
+//echo $lcs->getSimilar("Blind SQL Injection","SQL Injection");
