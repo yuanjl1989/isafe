@@ -7,10 +7,19 @@ function docancel(safe_id) {
             data: {},
             url: "/site/cancel?id="+safe_id,
             success: function () {
-                window.location.reload();
             }
         });
+        sleep(1000);
         window.location.reload();
+    }
+}
+
+function sleep(numberMillis) {
+    var now = new Date();
+    var exitTime = now.getTime() + numberMillis;
+    while (true) {
+        now = new Date();
+        if (now.getTime() > exitTime)    return;
     }
 }
 
