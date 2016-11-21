@@ -33,7 +33,7 @@ $this->title = 'Meters/bonwe 安全扫描平台';
 
                 <p>扫描未开始状态下，可从列表页进行该页面进行编辑操作</p>
 
-                <p><a class="btn btn-default" href="/new/new">进入 &raquo;</a></p>
+                <p><a class="btn btn-info" href="/new/new">进入 &raquo;</a></p>
             </div>
             <div class="col-lg-4" style="border:1px ridge;height: 440px">
                 <h2>列表</h2>
@@ -52,7 +52,7 @@ $this->title = 'Meters/bonwe 安全扫描平台';
                 <p>其中，下载报告按钮提供了测试报告下载的功能，编辑为申请编辑的入口，取消为等待状态下取消扫描申请，中止为扫描进行中时停止扫描</p>
 
 
-                <p><a class="btn btn-default" href="/list/list">进入 &raquo;</a></p>
+                <p><a class="btn btn-info" href="/list/list">进入 &raquo;</a></p>
             </div>
             <div class="col-lg-4" style="border:1px ridge;height: 440px">
                 <h2>报告</h2>

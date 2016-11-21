@@ -25,7 +25,7 @@ class NewController extends Controller
 
     public function actionNew()
     {
-        if(!Yii::$app->session['staff_no']){
+        if (!Yii::$app->session['staff_no']) {
             Yii::$app->session['url'] = Yii::$app->request->url;
             return $this->redirect('/site/login');
         }
@@ -35,15 +35,14 @@ class NewController extends Controller
 
         $tool = Yii::$app->request->get();
 
-        if(isset($tool['tool']) && $tool['tool'] == 'appscan'){
+        if (isset($tool['tool']) && $tool['tool'] == 'appscan') {
 //            echo "<script>alert('暂不支持该扫描方式，请选择其他工具，谢谢！')</script>";
             return $this->redirect('/list/list');
         }
 
-        if (!empty($params))
-        {
+        if (!empty($params)) {
             $safe_id = $this->insertSafeList($params['NewForm']);
-            $params_ext = array('safe_id' => $safe_id,'user_id' => Yii::$app->session['user_id'],'user_mail'=> Yii::$app->session['email']);
+            $params_ext = array('safe_id' => $safe_id, 'user_id' => Yii::$app->session['user_id'], 'user_mail' => Yii::$app->session['email']);
             $this->insertSafeExt($params_ext);
             Yii::$app->session->setFlash('newFormSubmitted');
             Yii::$app->session['safe_id'] = $safe_id;
@@ -61,23 +60,21 @@ class NewController extends Controller
 
     public function actionEdit($id)
     {
-        if(!Yii::$app->session['staff_no']){
+        if (!Yii::$app->session['staff_no']) {
             Yii::$app->session['url'] = Yii::$app->request->url;
             return $this->redirect('/site/login');
         }
 
         $details = SafeList::findOne($id);
-        $details_ext = SafeExt::find()->where(['safe_id'=>$details->id])->one();
+        $details_ext = SafeExt::find()->where(['safe_id' => $details->id])->one();
 
-        if($details_ext->user_id != Yii::$app->session['user_id'] || $details->status != 1)
-        {
+        if ($details_ext->user_id != Yii::$app->session['user_id'] || $details->status != 1) {
             Yii::$app->session->setFlash('permission');
         }
 
         $params = Yii::$app->request->post();
 
-        if (!empty($params))
-        {
+        if (!empty($params)) {
             $this->updateSafeList($params['SafeList']);
             Yii::$app->session->setFlash('editFormSubmitted');
             return $this->refresh();
@@ -93,7 +90,6 @@ class NewController extends Controller
     public function actionView($id)
     {
         $safe_info = $this->getSafeInfo($id);
-
         return $this->render('view', [
             'safe_info' => $safe_info,
         ]);
@@ -103,9 +99,7 @@ class NewController extends Controller
     public function insertSafeList($params)
     {
         $safelist = new SafeList();
-
         $date = date('Y-m-d H:i:s');
-
         $safelist->url = $params['url'];
         $safelist->profile = $params['profile'];
         $safelist->login_username = $params['login_username'];
@@ -114,7 +108,6 @@ class NewController extends Controller
         $safelist->is_mail = $params['is_mail'];
         $safelist->tool = $params['tool'];
         $safelist->create_at = $date;
-
         $safelist->save();
 
         return $safelist->attributes['id'];
@@ -152,17 +145,15 @@ class NewController extends Controller
 
     public function getSafeInfo($id)
     {
-
         $connection = Yii::$app->db;
-        $sql = "select a.*,c.chinese_name from safe_list a,safe_ext b,`user` c where a.id=b.safe_id and b.user_id=c.id";
+        $sql = "select a.*,b.user_id,b.user_mail,c.chinese_name from safe_list a,safe_ext b,`user` c where a.id=b.safe_id and b.user_id=c.id";
 
-        if(!empty($id)){
-            $sql_ext = " and a.id =".$id;
-            $sql = $sql.$sql_ext;
+        if (!empty($id)) {
+            $sql_ext = " and a.id =" . $id;
+            $sql = $sql . $sql_ext;
             $safe_info = $connection->createCommand($sql)->queryAll();
         }
-
-        return $safe_info?$safe_info:'';
+        return $safe_info ? $safe_info : '';
     }
 
 }

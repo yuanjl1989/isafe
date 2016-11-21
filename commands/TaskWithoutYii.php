@@ -58,7 +58,7 @@ class Scan
                     $command_main = "{$wvs_console} /Scan {$v['url']} /Profile {$scan_profile[$v['profile']]} /Save /GenerateReport /ReportFormat PDF /SaveFolder {$report_path}";
                     $command_mail = " /EmailAddress {$safe_info_ext['user_mail']}";
                     $command_auth = " --HtmlAuthUser={$v['login_username']} --HtmlAuthPass={$v['login_password']}";
-                    $command_ext = " --ScanningMode={$scan_mode[$v['mode']]} --abortscanafter=30 >{$report_path}\\wvs_log.log";
+                    $command_ext = " --ScanningMode={$scan_mode[$v['mode']]} --abortscanafter=60 >{$report_path}\\wvs_log.log";
 
                     if (!empty($v['login_username']) && !empty($v['login_password'])) {
                         $command = $command_main . $command_mail . $command_auth . $command_ext;
@@ -101,8 +101,8 @@ class Scan
                     }
                 } else {
                     echo "\n" . $command;
-                    system("mkdir {$report_path}", $out);
-                    system($command, $out);
+//                    system("mkdir {$report_path}", $out);
+//                    system($command, $out);
                 }
 
                 /*用户勾选了发送邮件，且选择扫描工具为wvs时，执行以下代码*/
@@ -153,6 +153,7 @@ class Scan
             $mail->From = "pmt_noreply@163.com";
             $mail->FromName = "pmt_noreply";
             $mail->AddAddress($mail_to);
+//            $mail->AddAddress('SDET@metersbonwe.com');
             $mail->Subject = "美邦安全扫描平台测试报告";
             $mail->Body = $content;
             $mail->AltBody = "To view the message, please use an HTML compatible email viewer!"; //当邮件不支持html时备用显示，可以省略
@@ -220,7 +221,7 @@ class Scan
         $content = '<html>';
         $content .= '<meta http-equiv="content-type" content="text/html;charset=utf8" />';
         $content .= '<body style="font-family:微软雅黑;font-size:14px;">';
-        $content .= '<span style="' . $header_css . '">美邦安全扫描平台测试报告（ID：' . $id . '）</span>';
+        $content .= '<a href="http://localhost:8081/scanreport/result_' . $id . '/report_wvs.html"><span style="' . $header_css . '">美邦安全扫描平台测试报告（ID：' . $id . '）</span></a>';
         $content .= "<br/><br/>";
         $content .= '<table style="' . $table_css . '">';
         $content .= '<tr><th style="' . $th_css . '" colspan="2">扫描信息</th></tr>';
@@ -305,7 +306,7 @@ class Scan
         $content = '<html>';
         $content .= '<meta http-equiv="content-type" content="text/html;charset=utf8" />';
         $content .= '<body style="font-family:微软雅黑;font-size:14px;">';
-        $content .= '<span style="' . $header_css . '">美邦安全扫描平台测试报告（ID：' . $id . '）</span>';
+        $content .= '<a href="http://localhost:8081/scanreport/result_' . $id . '/report_appscan.html"><span style="' . $header_css . '">美邦安全扫描平台测试报告（ID：' . $id . '）</span></a>';
         $content .= "<br/><br/>";
         $content .= '<table style="' . $table_css . '">';
         $content .= '<tr><th style="' . $th_css . '" colspan="2">扫描信息</th></tr>';
@@ -372,9 +373,9 @@ class Scan
             foreach ($appscan_safe_info['content'] as $app_k => $app_v) {
                 //返回相似度
                 $similar_per = $lcs->getSimilar($wvs_v['issues'], $app_v['summary']);
-                var_dump($wvs_v['issues'] . '-------' . $app_v['summary'] . '------------' . $similar_per . "\n\n\n");
                 if ($similar_per >= 0.6) {
-                    switch ($wvs_safe_info['content'][$wvs_k]['level']) {
+                    var_dump($wvs_v['issues'] . '-------' . $app_v['summary'] . '------------' . $similar_per . "\n\n\n");
+                    switch ($wvs_safe_info['content'][$wvs_k]['severity']) {
                         case '高':
                             $wvs_safe_info['summary']['level_count']['high']--;
                             $wvs_safe_info['summary']['level_count']['count']--;
@@ -402,7 +403,7 @@ class Scan
         $content = '<html>';
         $content .= '<meta http-equiv="content-type" content="text/html;charset=utf8" />';
         $content .= '<body style="font-family:微软雅黑;font-size:14px;">';
-        $content .= '<span style="' . $header_css . '">美邦安全扫描平台测试报告（ID：' . $wvs_safe_info['summary']['id'] . '）</span>';
+        $content .= '<a href="http://localhost:8081/scanreport/result_' . $wvs_safe_info['summary']['id'] . '/report_appscan.html"><span style="' . $header_css . '">美邦安全扫描平台测试报告（ID：' . $wvs_safe_info['summary']['id'] . '）</span></a>';
         $content .= "<br/><br/>";
         $content .= '<table style="' . $table_css . '">';
         $content .= '<tr><th style="' . $th_css . '" colspan="2">扫描信息</th></tr>';
@@ -427,34 +428,39 @@ class Scan
         $content .= '<span style="font-size: 18px;font-weight:bold">安全问题汇总：</span><br/>';
         $content .= "<hr/>";
 
-        $j = 1;
-        foreach ($wvs_safe_info['content'] as $key => $issue_content) {
-            $content .= '<span style="font-size: 16px;font-weight:bold">' . $j . ". " . $issue_content['issues'] . '</span><br/>';
-            $severity = '';
-            switch ($issue_content['severity']) {
+        $tmp_wvs = $tmp_high = $tmp_mid = $tmp_low = $tmp_info =array();
+        foreach ($wvs_safe_info['content'] as $wvs_key => $wvs_issue){
+            $tmp_wvs[$wvs_key]['summary'] = $wvs_issue['issues'];
+            $tmp_wvs[$wvs_key]['level'] = $wvs_issue['severity'];
+            $tmp_wvs[$wvs_key]['desc'] = $wvs_issue['desc_text'];
+            $tmp_wvs[$wvs_key]['affects'] = $wvs_issue['affects'];
+            $tmp_wvs[$wvs_key]['risk'] = $wvs_issue['impact_text'];
+            $tmp_wvs[$wvs_key]['suggestion'] = $wvs_issue['recm_text'];
+        }
+        $issue_contents = array_merge($tmp_wvs,$appscan_safe_info['content']);
+
+        foreach ($issue_contents as $merge_key => $issue){
+            switch ($issue['level']){
+                case '参':
+                    $tmp_info[] = $issue;
+                    break;
                 case '低':
-                    $severity = '<span style="color:deepskyblue">低</span>';
+                    $tmp_low[] = $issue;
                     break;
                 case '中':
-                    $severity = '<span style="color:orange">中</span>';
+                    $tmp_mid[] = $issue;
                     break;
                 case '高':
-                    $severity = '<span style="color:red">高</span>';
+                    $tmp_high[] = $issue;
                     break;
             }
-            $content .= '<span style="font-weight:bold">风险等级：</span>' . $severity . '<br/>';
-            $content .= '<span style="font-weight:bold">描述：</span>' . (!empty($issue_content['desc_text']) ? $issue_content['desc_text'] : '待分析') . '<br/>';
-            $content .= '<span style="font-weight:bold">影响内容：</span>' . (!empty($issue_content['affects']) ? $issue_content['affects'] : '待分析') . '<br/>';
-            $content .= '<span style="font-weight:bold">风险：</span>' . (!empty($issue_content['impact_text']) ? $issue_content['impact_text'] : '待分析') . '<br/>';
-            $content .= '<span style="font-weight:bold">建议：</span>' . (!empty($issue_content['recm_text']) ? $issue_content['recm_text'] : '待分析') . '<br/>';
-            $content .= "<br/><br/>";
-            $j++;
         }
+        $issue_contents = array_merge($tmp_high,$tmp_mid,$tmp_low,$tmp_info);
 
-        for ($i = 1; $i <= count($appscan_safe_info['content']); $i++) {
-            $content .= '<span style="font-size: 16px;font-weight:bold">' . ($i + $wvs_safe_info['summary']['level_count']['count']) . ". " . $appscan_safe_info['content'][$i - 1]['summary'] . '</span><br/>';
+        for ($i = 1; $i <= count($issue_contents); $i++) {
+            $content .= '<span style="font-size: 16px;font-weight:bold">' . $i . ". " . $issue_contents[$i - 1]['summary'] . '</span><br/>';
             $severity = '';
-            switch ($appscan_safe_info['content'][$i - 1]['level']) {
+            switch ($issue_contents[$i - 1]['level']) {
                 case '参':
                     $severity = '<span style="color:black">参考</span>';
                     break;
@@ -469,10 +475,10 @@ class Scan
                     break;
             }
             $content .= '<span style="font-weight:bold">风险等级：</span>' . $severity . '<br/>';
-            $content .= '<span style="font-weight:bold">描述：</span>' . (!empty($appscan_safe_info['content'][$i - 1]['desc']) ? $appscan_safe_info['content'][$i - 1]['desc'] : '待分析') . '<br/>';
-            $content .= '<span style="font-weight:bold">影响内容：</span>' . (!empty($appscan_safe_info['content'][$i - 1]['affects']) ? $appscan_safe_info['content'][$i - 1]['affects'] : '待分析') . '<br/>';
-            $content .= '<span style="font-weight:bold">风险：</span>' . (!empty($appscan_safe_info['content'][$i - 1]['risk']) ? $appscan_safe_info['content'][$i - 1]['risk'] : '待分析') . '<br/>';
-            $content .= '<span style="font-weight:bold">建议：</span>' . (!empty($appscan_safe_info['content'][$i - 1]['suggestion']) ? $appscan_safe_info['content'][$i - 1]['suggestion'] : '待分析') . '<br/>';
+            $content .= '<span style="font-weight:bold">描述：</span>' . (!empty($issue_contents[$i - 1]['desc']) ? $issue_contents[$i - 1]['desc'] : '待分析') . '<br/>';
+            $content .= '<span style="font-weight:bold">影响内容：</span>' . (!empty($issue_contents[$i - 1]['affects']) ? $issue_contents[$i - 1]['affects'] : '待分析') . '<br/>';
+            $content .= '<span style="font-weight:bold">风险：</span>' . (!empty($issue_contents[$i - 1]['risk']) ? $issue_contents[$i - 1]['risk'] : '待分析') . '<br/>';
+            $content .= '<span style="font-weight:bold">建议：</span>' . (!empty($issue_contents[$i - 1]['suggestion']) ? $issue_contents[$i - 1]['suggestion'] : '待分析') . '<br/>';
             $content .= "<br/><br/>";
         }
 
@@ -493,15 +499,22 @@ class Scan
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
         curl_setopt($ch, CURLOPT_HEADER, 0);
         $file_contents = curl_exec($ch);
+        //翻译不成功，重试三次
         if(!$file_contents){
             $file_contents = curl_exec($ch);
+            if(!$file_contents){
+                $file_contents = curl_exec($ch);
+                if(!$file_contents){
+                    $file_contents = curl_exec($ch);
+                }
+            }
         }
         curl_close($ch);
         if ($file_contents) {
             $wvs_translate_obj = json_decode($file_contents);
             $ret = @$wvs_translate_obj->translation[0];
         }
-        return isset($ret) ? $ret : $content;
+        return isset($ret) ? $ret : urldecode($content);
     }
 
     public function translateLongContent($content)

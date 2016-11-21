@@ -1,2 +1,0 @@
-0 data has been updated !
-D:\WVS10\wvs_console /Scan http://testphp.vulnweb.com /Profile Default /Save /GenerateReport /ReportFormat PDF /SaveFolder E:\yii\web\scanreport\result_138 /EmailAddress yuanjunlei@metersbonwe.com --ScanningMode=Quick --abortscanafter=30 >E:\yii\web\scanreport\result_138\wvs_log.log

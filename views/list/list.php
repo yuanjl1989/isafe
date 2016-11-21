@@ -43,7 +43,7 @@ $this->params['breadcrumbs'][] = $this->title;
 </form>
 
 <div style="margin-left: 950px">
-    <a href="/new/new" class="btn btn-default btn-lg" role="button">新增安全扫描</a>
+    <a href="/new/new" class="btn btn-warning btn-lg" role="button">新增安全扫描</a>
 </div>
 
 
@@ -74,12 +74,12 @@ $this->params['breadcrumbs'][] = $this->title;
                     $details_ext = SafeExt::find()->where(['safe_id'=>$details->id])->one();
                     if($details_ext->user_id == Yii::$app->session['user_id']):?>
                     <?php if ($item['status'] == 1):?>
-                        <a href="/new/edit?id=<?=$item['id']?>"><button type="button" class="btn btn-default">编辑</button></a>
+                        <a href="/new/edit?id=<?=$item['id']?>"><button type="button" class="btn btn-info">编辑</button></a>
                         &nbsp;&nbsp;&nbsp;&nbsp;
-                        <button type="button" class="btn btn-default" onclick="docancel(<?=$item['id']?>)">取消</button>
+                        <button type="button" class="btn btn-info" onclick="docancel(<?=$item['id']?>)">取消</button>
                     <?php endif;?>
                     <?php if ($item['status'] == 4):?>
-                        <a href="/scanreport/result_<?=$item['id']?>/report_<?=($item['tool'] == 0)?'all':(($item['tool'] == 1)?'wvs':'appscan');?>.html"><button type="button" class="btn btn-default">下载报告</button></a>
+                        <a href="/scanreport/result_<?=$item['id']?>/report_<?=($item['tool'] == 0)?'all':(($item['tool'] == 1)?'wvs':'appscan');?>.html"><button type="button" class="btn btn-success">查看报告</button></a>
                     <?php endif;?>
                 <?php endif;?>
             </td>
