@@ -9,7 +9,7 @@ function docancel(safe_id) {
             success: function () {
             }
         });
-        sleep(1000);
+        sleep(300);
         window.location.reload();
     }
 }
