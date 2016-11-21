@@ -10,6 +10,7 @@ function docancel(safe_id) {
                 window.location.reload();
             }
         });
+        window.location.reload();
     }
 }
 
