@@ -27,7 +27,7 @@ $status = ['1'=>'新建','2'=>'进行中','3'=>'已取消','4'=>'已完成'];
                 <?php endif;?>
                 <?php if($safe_info[0]['user_id'] == Yii::$app->session['user_id']):?>
                 <?php if ($safe_info[0]['status'] == 4):?>
-                    <a class="btn btn-success" href="/scanreport/result_<?=$safe_info[0]['id']?>/report_<?=($safe_info[0]['tool'] == 0)?'all':(($safe_info[0]['tool'] == 1)?'wvs':'appscan');?>.html" role="button" style="margin-left: 80px">查看报告</a>
+                    <a class="btn btn-success" href="/scanreport/result_<?=$safe_info[0]['id']?>/report_<?=($safe_info[0]['tool'] == 0)?'all':(($safe_info[0]['tool'] == 1)?'wvs':'appscan');?>.html" target="_blank" role="button" style="margin-left: 80px">查看报告</a>
                 <?php endif;?>
                 <?php endif;?>
             </div>

@@ -221,7 +221,7 @@ class Scan
         $content = '<html>';
         $content .= '<meta http-equiv="content-type" content="text/html;charset=utf8" />';
         $content .= '<body style="font-family:微软雅黑;font-size:14px;">';
-        $content .= '<a href="http://localhost:8081/scanreport/result_' . $id . '/report_wvs.html"><span style="' . $header_css . '">美邦安全扫描平台测试报告（ID：' . $id . '）</span></a>';
+        $content .= '<a href="http://localhost:8081/scanreport/result_' . $id . '/report_wvs.html"  style="text-decoration : none"><span style="' . $header_css . '">美邦安全扫描平台测试报告（ID：' . $id . '）</span></a>';
         $content .= "<br/><br/>";
         $content .= '<table style="' . $table_css . '">';
         $content .= '<tr><th style="' . $th_css . '" colspan="2">扫描信息</th></tr>';
@@ -306,7 +306,7 @@ class Scan
         $content = '<html>';
         $content .= '<meta http-equiv="content-type" content="text/html;charset=utf8" />';
         $content .= '<body style="font-family:微软雅黑;font-size:14px;">';
-        $content .= '<a href="http://localhost:8081/scanreport/result_' . $id . '/report_appscan.html"><span style="' . $header_css . '">美邦安全扫描平台测试报告（ID：' . $id . '）</span></a>';
+        $content .= '<a href="http://localhost:8081/scanreport/result_' . $id . '/report_appscan.html" style="text-decoration : none"><span style="' . $header_css . '">美邦安全扫描平台测试报告（ID：' . $id . '）</span></a>';
         $content .= "<br/><br/>";
         $content .= '<table style="' . $table_css . '">';
         $content .= '<tr><th style="' . $th_css . '" colspan="2">扫描信息</th></tr>';
@@ -403,7 +403,7 @@ class Scan
         $content = '<html>';
         $content .= '<meta http-equiv="content-type" content="text/html;charset=utf8" />';
         $content .= '<body style="font-family:微软雅黑;font-size:14px;">';
-        $content .= '<a href="http://localhost:8081/scanreport/result_' . $wvs_safe_info['summary']['id'] . '/report_appscan.html"><span style="' . $header_css . '">美邦安全扫描平台测试报告（ID：' . $wvs_safe_info['summary']['id'] . '）</span></a>';
+        $content .= '<a href="http://localhost:8081/scanreport/result_' . $wvs_safe_info['summary']['id'] . '/report_appscan.html" style="text-decoration : none"><span style="' . $header_css . '">美邦安全扫描平台测试报告（ID：' . $wvs_safe_info['summary']['id'] . '）</span></a>';
         $content .= "<br/><br/>";
         $content .= '<table style="' . $table_css . '">';
         $content .= '<tr><th style="' . $th_css . '" colspan="2">扫描信息</th></tr>';

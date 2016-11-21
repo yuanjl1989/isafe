@@ -9,7 +9,7 @@ $this->title = 'Meters/bonwe 安全扫描平台';
     <div class="jumbotron">
         <h1>欢迎使用安全扫描平台</h1>
 
-        <p class="lead">以下为系统基本功能的简单介绍。</p>
+        <p class="lead">以下为系统基本功能的简要介绍</p>
     </div>
 
     <div class="body-content">

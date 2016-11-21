@@ -79,7 +79,7 @@ $this->params['breadcrumbs'][] = $this->title;
                         <button type="button" class="btn btn-info" onclick="docancel(<?=$item['id']?>)">取消</button>
                     <?php endif;?>
                     <?php if ($item['status'] == 4):?>
-                        <a href="/scanreport/result_<?=$item['id']?>/report_<?=($item['tool'] == 0)?'all':(($item['tool'] == 1)?'wvs':'appscan');?>.html"><button type="button" class="btn btn-success">查看报告</button></a>
+                        <a href="/scanreport/result_<?=$item['id']?>/report_<?=($item['tool'] == 0)?'all':(($item['tool'] == 1)?'wvs':'appscan');?>.html" target="_blank"><button type="button" class="btn btn-success">查看报告</button></a>
                     <?php endif;?>
                 <?php endif;?>
             </td>
