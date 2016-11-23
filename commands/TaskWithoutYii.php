@@ -44,7 +44,7 @@ class Scan
         }
 
         $date = date('Y-m-d H:i:s');
-        $sql = 'select * from safe_list where status=1 order by create_at ASC';
+        $sql = 'select * from safe_list where status=1 order by create_at ASC limit 1';
         $safe_info = $this->connectDB()->query($sql)->fetchAll();
 
         foreach ($safe_info as $k => $v) {
