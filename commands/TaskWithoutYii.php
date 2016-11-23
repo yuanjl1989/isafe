@@ -101,8 +101,8 @@ class Scan
                     }
                 } else {
                     echo "\n" . $command;
-//                    system("mkdir {$report_path}", $out);
-//                    system($command, $out);
+                    system("mkdir {$report_path}", $out);
+                    system($command, $out);
                 }
 
                 /*用户勾选了发送邮件，且选择扫描工具为wvs时，执行以下代码*/
