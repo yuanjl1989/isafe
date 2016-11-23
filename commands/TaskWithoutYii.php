@@ -36,10 +36,10 @@ class Scan
         $stmt = $this->connectDB()->exec($sql);
         echo $stmt . " data has been updated !";
 
-        /*控制同时进行扫描的个数，若超过5个，则退出脚本*/
-        $sql_2 = 'select count(*) as num from safe_list where status=2';
+        /*控制同时进行扫描的个数，若超过3个，则退出脚本*/
+        $sql_2 = 'select count(1) num from safe_list where status=2';
         $count_doing = $this->connectDB()->query($sql_2)->fetchAll();
-        if ($count_doing[0]['num'] > 5) {
+        if ($count_doing[0]['num'] >= 3) {
             exit;
         }
 

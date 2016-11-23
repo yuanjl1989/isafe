@@ -33,21 +33,19 @@ class NewController extends Controller
         $model = new NewForm();
         $params = Yii::$app->request->post();
 
-        $tool = Yii::$app->request->get();
-
-        if (isset($tool['tool']) && $tool['tool'] == 'appscan') {
-//            echo "<script>alert('暂不支持该扫描方式，请选择其他工具，谢谢！')</script>";
-            return $this->redirect('/list/list');
-        }
-
         if (!empty($params)) {
-            $safe_id = $this->insertSafeList($params['NewForm']);
-            $params_ext = array('safe_id' => $safe_id, 'user_id' => Yii::$app->session['user_id'], 'user_mail' => Yii::$app->session['email']);
-            $this->insertSafeExt($params_ext);
-            Yii::$app->session->setFlash('newFormSubmitted');
-            Yii::$app->session['safe_id'] = $safe_id;
+            $add_num = Yii::$app->db->createCommand('select COUNT(1) num from safe_ext where DATE_FORMAT(create_at,\'%Y-%m-%d\') = CURDATE()')->queryAll();
+            if($add_num[0]['num']>=3){
+                echo "<script>alert('当日申请次数过多，请明日再试！')</script>";
+            }else{
+                $safe_id = $this->insertSafeList($params['NewForm']);
+                $params_ext = array('safe_id' => $safe_id, 'user_id' => Yii::$app->session['user_id'], 'user_mail' => Yii::$app->session['email']);
+                $this->insertSafeExt($params_ext);
+                Yii::$app->session->setFlash('newFormSubmitted');
+                Yii::$app->session['safe_id'] = $safe_id;
 
-            return $this->refresh();
+                return $this->refresh();
+            }
         }
 
         $model->is_mail = 1;
