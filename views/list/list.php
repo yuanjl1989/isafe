@@ -42,7 +42,7 @@ $this->params['breadcrumbs'][] = $this->title;
     </div>
 </form>
 
-<div style="margin-left: 950px">
+<div style="margin-left: 980px">
     <a href="/new/new" class="btn btn-warning btn-lg" role="button">新增安全扫描</a>
 </div>
 
@@ -52,7 +52,7 @@ $this->params['breadcrumbs'][] = $this->title;
     <thead>
         <tr>
             <th width="4%">ID</th>
-            <th width="45%">扫描站点</th>
+            <th width="30%">扫描站点</th>
             <th width="8%">申请人</th>
             <th width="15%">申请时间</th>
             <th width="8%">状态</th>

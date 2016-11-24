@@ -29,6 +29,7 @@ class NewForm extends Model
         return [
             ['url','url'],
             [['url','profile','mode','is_mail','tool'], 'required'],
+            ['url','string','length'=>[0,60]],
         ];
     }
     
