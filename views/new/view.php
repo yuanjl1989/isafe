@@ -45,8 +45,8 @@ $status = ['1'=>'新建','2'=>'进行中','3'=>'已取消','4'=>'已完成'];
                 <hr/>
                 <div class="form-control-static"><label>表单账号：</label><?=$safe_info[0]['login_username']?></div>
                 <div class="form-control-static"><label>表单密码：</label><?=$safe_info[0]['login_password']?></div>
-                <hr/>
                 <?php endif;?>
+                <hr/>
 
                 <div class="form-control-static"><label>申请人：</label><?=$safe_info[0]['chinese_name']?></div>
                 <div class="form-control-static"><label>申请时间：</label><?=$safe_info[0]['create_at']?></div>
