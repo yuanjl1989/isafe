@@ -34,7 +34,8 @@ class NewController extends Controller
         $params = Yii::$app->request->post();
 
         if (!empty($params)) {
-            $add_num = Yii::$app->db->createCommand('select COUNT(1) num from safe_ext where DATE_FORMAT(create_at,\'%Y-%m-%d\') = CURDATE()')->queryAll();
+            $sql_add = "select COUNT(1) num from safe_ext where DATE_FORMAT(create_at,'%Y-%m-%d') =CURDATE() and user_id=".Yii::$app->session['user_id'];
+            $add_num = Yii::$app->db->createCommand($sql_add)->queryAll();
             if($add_num[0]['num']>=3){
                 echo "<script>alert('当日申请次数过多，请明日再试！')</script>";
             }else{
