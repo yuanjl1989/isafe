@@ -40,9 +40,10 @@ AppAsset::register($this);
             ['label' => '新增申请', 'url' => ['/new/new']],
             ['label' => '列表页', 'url' => ['/list/list']],
             !Yii::$app->session['staff_no'] ? (
-                ['label' => '登录', 'url' => ['/site/login']]
+            ['label' => '登录', 'url' => ['/site/login']]
             ) : (
-                ['label' => '退出 (' . Yii::$app->session['staff_no'] . ')', 'url' => ['/site/logout']]
+            ['label' => '欢迎 (' . Yii::$app->session['staff_no'] . ')', 'items' => [
+                ['label' => '退出', 'url' => ['/site/logout']]]]
             )
         ],
     ]);
