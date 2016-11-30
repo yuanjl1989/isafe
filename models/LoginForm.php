@@ -87,7 +87,6 @@ class LoginForm extends Model
     {
         if ($this->_user === false) {
             $this->_user = User::find()->where(['staff_no' => $this->username])->one();
-            echo $this->username;
         }
 
         return $this->_user;
