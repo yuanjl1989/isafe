@@ -42,7 +42,7 @@ class ListController extends Controller
 
     public function getListInfo($conditions = array(), $page = 1, $page_size = 15)
     {
-        $conditions['username'] = trim($conditions['username']);
+        $conditions['username'] = isset($conditions['username'])?trim($conditions['username']):'';
         if (!empty($conditions['username'])) {
             $user_info = User::find()->where(['chinese_name' => $conditions['username']])->asArray()->one();
             if ($user_info) {
