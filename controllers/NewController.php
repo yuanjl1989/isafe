@@ -34,13 +34,13 @@ class NewController extends Controller
         $params = Yii::$app->request->post();
 
         if (!empty($params)) {
-            $sql_add = "select COUNT(1) num from safe_ext where DATE_FORMAT(create_at,'%Y-%m-%d') =CURDATE() and user_id=".Yii::$app->session['user_id'];
+            $sql_add = "select COUNT(1) num from safe_ext where DATE_FORMAT(create_at,'%Y-%m-%d') =CURDATE() and user_id=".Yii::$app->session['staff_id'];
             $add_num = Yii::$app->db->createCommand($sql_add)->queryAll();
             if($add_num[0]['num']>=3){
                 echo "<script>alert('当日申请次数过多，请明日再试！')</script>";
             }else{
                 $safe_id = $this->insertSafeList($params['NewForm']);
-                $params_ext = array('safe_id' => $safe_id, 'user_id' => Yii::$app->session['user_id'], 'user_mail' => Yii::$app->session['email']);
+                $params_ext = array('safe_id' => $safe_id, 'user_id' => Yii::$app->session['staff_id'], 'user_mail' => Yii::$app->session['email']);
                 $this->insertSafeExt($params_ext);
                 Yii::$app->session->setFlash('newFormSubmitted');
                 Yii::$app->session['safe_id'] = $safe_id;
@@ -67,7 +67,7 @@ class NewController extends Controller
         $details = SafeList::findOne($id);
         $details_ext = SafeExt::find()->where(['safe_id' => $details->id])->one();
 
-        if ($details_ext->user_id != Yii::$app->session['user_id'] || $details->status != 1) {
+        if ($details_ext->user_id != Yii::$app->session['staff_id'] || $details->status != 1) {
             Yii::$app->session->setFlash('permission');
         }
 

@@ -45,21 +45,25 @@ class ListController extends Controller
         if (!empty($conditions['username'])) {
             $user_info = User::find()->where(['chinese_name' => $conditions['username']])->asArray()->one();
             if ($user_info) {
+                $safe_id_arr = array();
                 $safe_ext_info = SafeExt::find()->where(['user_id' => $user_info['id']])->asArray()->all();
-                if ($safe_ext_info) {
+                if (!empty($safe_ext_info)) {
                     foreach ($safe_ext_info as $item) {
-                        $safe_id_arr[] = "'" . $item['safe_id'] . "'";
+                        $safe_id_arr[] = $item['safe_id'];
                     }
-                    $safe_ids = implode(',', array_unique($safe_id_arr));
+                    $safe_ids = implode(',', $safe_id_arr);
                 }
+
                 if (!empty($conditions['status'])) {
-                    $safe_info = SafeList::find()->where(['and', ['in', 'id', $safe_ids], ['in', 'status', $conditions['status']]])->asArray()->all();
+                    $safe_info = SafeList::find()->where(['and', ['in', 'id', $safe_id_arr], ['in', 'status', $conditions['status']]])->asArray()->all();
                     if ($safe_info) {
                         foreach ($safe_info as $item) {
-                            $safe_id_arr_new[] = "'" . $item['id'] . "'";
+                            $safe_id_arr_new[] = $item['id'];
                         }
+                        $safe_ids = implode(',', $safe_id_arr_new);
+                    } else {
+                        unset($safe_ids);
                     }
-                    $safe_ids = implode(',', $safe_id_arr_new);
                 }
             }
         }
@@ -69,7 +73,7 @@ class ListController extends Controller
                 $safe_info = SafeList::find()->where(['in', 'status', $conditions['status']])->asArray()->all();
                 if ($safe_info) {
                     foreach ($safe_info as $item) {
-                        $safe_id_arr[] = "'" . $item['id'] . "'";
+                        $safe_id_arr[] = $item['id'];
                     }
                     $safe_ids = implode(',', $safe_id_arr);
                 }

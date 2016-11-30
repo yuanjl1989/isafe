@@ -72,7 +72,7 @@ $this->params['breadcrumbs'][] = $this->title;
                 <?php
                     $details = SafeList::findOne($item['id']);
                     $details_ext = SafeExt::find()->where(['safe_id'=>$details->id])->one();
-                    if($details_ext->user_id == Yii::$app->session['user_id']):?>
+                    if($details_ext->user_id == Yii::$app->session['staff_id']):?>
                     <?php if ($item['status'] == 1):?>
                         <a href="/new/edit?id=<?=$item['id']?>"><button type="button" class="btn btn-info">编辑</button></a>
                         &nbsp;&nbsp;&nbsp;&nbsp;
