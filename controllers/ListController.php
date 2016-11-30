@@ -42,8 +42,8 @@ class ListController extends Controller
 
     public function getListInfo($conditions = array(), $page = 1, $page_size = 15)
     {
-        if (!empty($conditions['username'])) {
-            $user_info = User::find()->where(['chinese_name' => $conditions['username']])->asArray()->one();
+        if (!empty(trim($conditions['username']))) {
+            $user_info = User::find()->where(['chinese_name' => trim($conditions['username'])])->asArray()->one();
             if ($user_info) {
                 $safe_id_arr = array();
                 $safe_ext_info = SafeExt::find()->where(['user_id' => $user_info['id']])->asArray()->all();
@@ -68,7 +68,7 @@ class ListController extends Controller
             }
         }
 
-        if (empty($conditions['username'])) {
+        if (empty(trim($conditions['username']))) {
             if (!empty($conditions['status'])) {
                 $safe_info = SafeList::find()->where(['in', 'status', $conditions['status']])->asArray()->all();
                 if ($safe_info) {
