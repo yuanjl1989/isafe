@@ -75,6 +75,7 @@ class LoginForm extends Model
                 Header("Location: /");
             }
         }
+        echo "<script>alert('登录失败，账号或密码错误！')</script>";
         return false;
     }
 
