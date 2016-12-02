@@ -39,7 +39,7 @@ AppAsset::register($this);
             ['label' => '首页', 'url' => ['/site/index']],
             ['label' => '新增申请', 'url' => ['/new/new']],
             ['label' => '列表页', 'url' => ['/list/list']],
-            !Yii::$app->session['staff_no'] ? (
+            !Yii::$app->session['user_id'] ? (
             ['label' => '登录', 'url' => ['/site/login']]
             ) : (
             ['label' => '欢迎 (' . Yii::$app->session['staff_no'] . ')', 'items' => [

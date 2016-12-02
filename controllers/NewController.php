@@ -25,7 +25,7 @@ class NewController extends Controller
 
     public function actionNew()
     {
-        if (!Yii::$app->session['staff_no']) {
+        if (!Yii::$app->session['user_id']) {
             Yii::$app->session['url'] = Yii::$app->request->url;
             return $this->redirect('/site/login');
         }
@@ -59,7 +59,7 @@ class NewController extends Controller
 
     public function actionEdit($id)
     {
-        if (!Yii::$app->session['staff_no']) {
+        if (!Yii::$app->session['user_id']) {
             Yii::$app->session['url'] = Yii::$app->request->url;
             return $this->redirect('/site/login');
         }

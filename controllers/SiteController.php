@@ -30,7 +30,7 @@ class SiteController extends Controller
 
     public function actionLogin()
     {
-        if (Yii::$app->session['staff_no']) {
+        if (Yii::$app->session['user_id']) {
             return $this->redirect('/');
         }
 
@@ -52,7 +52,7 @@ class SiteController extends Controller
 
     public function actionCancel($id)
     {
-        if(!Yii::$app->session['staff_no']){
+        if(!Yii::$app->session['user_id']){
             return $this->redirect('/site/login');
         }
 
