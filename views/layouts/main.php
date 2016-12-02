@@ -42,7 +42,7 @@ AppAsset::register($this);
             !Yii::$app->session['user_id'] ? (
             ['label' => '登录', 'url' => ['/site/login']]
             ) : (
-            ['label' => '欢迎 (' . Yii::$app->session['staff_no'] . ')', 'items' => [
+            ['label' => '欢迎 (' . Yii::$app->session['user_no'] . ')', 'items' => [
                 ['label' => '退出', 'url' => ['/site/logout']]]]
             )
         ],

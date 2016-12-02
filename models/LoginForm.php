@@ -59,7 +59,7 @@ class LoginForm extends Model
         $user_info = $this->getUser();
         if ($user_info) {
             if ($this->validate() || $this->auth_login($this->username, $this->password)) {
-                Yii::$app->session['staff_no'] = $user_info['staff_no'];
+                Yii::$app->session['user_no'] = $user_info['staff_no'];
                 Yii::$app->session['user_id'] = $user_info['id'];
                 Yii::$app->session['email'] = $user_info['email'];
                 if (Yii::$app->session['url']) {
@@ -136,7 +136,7 @@ class LoginForm extends Model
             $user->is_deleted = 0;
             $user->save();
 
-            Yii::$app->session['staff_no'] = $inputarr['staff_no'];
+            Yii::$app->session['user_no'] = $inputarr['staff_no'];
             Yii::$app->session['user_id'] = $user->attributes['id'];
             Yii::$app->session['email'] = $inputarr['username'];
 
