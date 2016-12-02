@@ -59,7 +59,7 @@ class SiteController extends Controller
         $safe_info = SafeList::findOne($id);
         $details_ext = SafeExt::find()->where(['safe_id'=>$safe_info->id])->one();
 
-        if($details_ext->user_id != Yii::$app->session['staff_id'])
+        if($details_ext->user_id != Yii::$app->session['user_id'])
         {
             echo '你没有权限进行该操作！';
         }

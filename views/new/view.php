@@ -22,7 +22,7 @@ $status = ['1'=>'新建','2'=>'进行中','3'=>'已取消','4'=>'已完成'];
         <div class="col-lg-4">
             <div style="margin-bottom: 20px">
                 <a class="btn btn-info" href="/list/list" role="button">返回</a>
-                <?php if($safe_info[0]['user_id'] == Yii::$app->session['staff_id']):?>
+                <?php if($safe_info[0]['user_id'] == Yii::$app->session['user_id']):?>
                 <?php if ($safe_info[0]['status'] == 1):?>
                     <a class="btn btn-info" href="/new/edit?id=<?=$safe_info[0]['id']?>" role="button" style="margin-left: 80px">编辑</a>
                 <?php endif;?>

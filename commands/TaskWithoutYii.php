@@ -255,7 +255,7 @@ class Scan
                 $issues_info['content'][$key]['impact_text'] = $issue_content['impact_text'] = $issues_lib[0]['risk'];
                 $issues_info['content'][$key]['recm_text'] = $issue_content['recm_text'] = $issues_lib[0]['suggestion'];
             } else {
-                $issues_info['content'][$key]['issues'] = $issue_content['issues'] = $this->translateLongContent($issue_content['issues']);
+                $issues_info['content'][$key]['issues'] = $issue_content['issues'] = $this->translateLongContent($issue_content['issues']) .'*';
                 $issues_info['content'][$key]['desc_text'] = $issue_content['desc_text'] = $this->translateLongContent($issue_content['desc_text']);
                 $issues_info['content'][$key]['impact_text'] = $issue_content['impact_text'] = $this->translateLongContent($issue_content['impact_text']);
                 $issues_info['content'][$key]['recm_text'] = $issue_content['recm_text'] = $this->translateLongContent($issue_content['recm_text']);
