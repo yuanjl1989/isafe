@@ -42,30 +42,40 @@ class ListController extends Controller
 
     public function getListInfo($conditions = array(), $page = 1, $page_size = 15)
     {
-        $conditions['username'] = isset($conditions['username'])?trim($conditions['username']):'';
+        $conditions['username'] = isset($conditions['username']) ? trim($conditions['username']) : '';
         if (!empty($conditions['username'])) {
-            $user_info = User::find()->where(['chinese_name' => $conditions['username']])->asArray()->one();
-            if ($user_info) {
+//            $user_info = User::find()->where(['chinese_name' => $conditions['username']])->asArray()->one();
+            $user_info = User::find()->where(['like', 'chinese_name', $conditions['username']])->asArray()->all();
+
+            if (!empty($user_info)) {
                 $safe_id_arr = array();
-                $safe_ext_info = SafeExt::find()->where(['user_id' => $user_info['id']])->asArray()->all();
-                if (!empty($safe_ext_info)) {
-                    foreach ($safe_ext_info as $item) {
-                        $safe_id_arr[] = $item['safe_id'];
+                $safe_ids_new = '';
+                foreach ($user_info as $value) {
+                    $safe_ext_info = SafeExt::find()->where(['user_id' => $value['id']])->asArray()->all();
+                    if (!empty($safe_ext_info)) {
+                        foreach ($safe_ext_info as $item) {
+                            $safe_id_arr[] = $item['safe_id'];
+                        }
+                        $safe_ids = implode(',', $safe_id_arr);
                     }
-                    $safe_ids = implode(',', $safe_id_arr);
+
+                    if (!empty($conditions['status'])) {
+                        $safe_info = SafeList::find()->where(['and', ['in', 'id', $safe_id_arr], ['in', 'status', $conditions['status']]])->asArray()->all();
+                        if ($safe_info) {
+                            foreach ($safe_info as $item) {
+                                $safe_id_arr_new[] = $item['id'];
+                            }
+                            $safe_ids = implode(',', $safe_id_arr_new);
+                        } else {
+                            unset($safe_ids);
+                        }
+                    }
+                }
+                if(isset($safe_ids)){
+                    $safe_ids_new .= $safe_ids . ',';
+                    $safe_ids = substr($safe_ids_new, 0, -1);
                 }
 
-                if (!empty($conditions['status'])) {
-                    $safe_info = SafeList::find()->where(['and', ['in', 'id', $safe_id_arr], ['in', 'status', $conditions['status']]])->asArray()->all();
-                    if ($safe_info) {
-                        foreach ($safe_info as $item) {
-                            $safe_id_arr_new[] = $item['id'];
-                        }
-                        $safe_ids = implode(',', $safe_id_arr_new);
-                    } else {
-                        unset($safe_ids);
-                    }
-                }
             }
         }
 
