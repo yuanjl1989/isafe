@@ -237,7 +237,8 @@ class Scan
         $content_num = '<span style="font-size: 15px;font-weight:bold">' . '总数：' . $issues_info['summary']['level_count']['count'] . "</span><br/>" .
             '<span style="font-size: 15px;color:red">' . '高：' . $issues_info['summary']['level_count']['high'] . "</span><br/>" .
             '<span style="font-size: 15px;color:orange">' . '中：' . $issues_info['summary']['level_count']['mid'] . "</span><br/>" .
-            '<span style="font-size: 15px;color:deepskyblue">' . '低：' . $issues_info['summary']['level_count']['low'] . "</span><br/>";
+            '<span style="font-size: 15px;color:deepskyblue">' . '低：' . $issues_info['summary']['level_count']['low'] . "</span><br/>" .
+            '<span style="font-size: 15px;color:black">' . '参考：' . $issues_info['summary']['level_count']['info'] . "</span><br/>";
         $content .= '<tr><td style="background-color:#efefef;' . $td_css . '">问题数量</td><td style="' . $td_css . '">' . $content_num . '</td></tr>';
         $content .= '</table>';
         $content .= "<br/><br/>";
@@ -255,7 +256,7 @@ class Scan
                 $issues_info['content'][$key]['impact_text'] = $issue_content['impact_text'] = $issues_lib[0]['risk'];
                 $issues_info['content'][$key]['recm_text'] = $issue_content['recm_text'] = $issues_lib[0]['suggestion'];
             } else {
-                $issues_info['content'][$key]['issues'] = $issue_content['issues'] = $this->translateLongContent($issue_content['issues']) .'*';
+                $issues_info['content'][$key]['issues'] = $issue_content['issues'] = $this->translateLongContent($issue_content['issues']) . '*';
                 $issues_info['content'][$key]['desc_text'] = $issue_content['desc_text'] = $this->translateLongContent($issue_content['desc_text']);
                 $issues_info['content'][$key]['impact_text'] = $issue_content['impact_text'] = $this->translateLongContent($issue_content['impact_text']);
                 $issues_info['content'][$key]['recm_text'] = $issue_content['recm_text'] = $this->translateLongContent($issue_content['recm_text']);
@@ -264,6 +265,9 @@ class Scan
             $content .= '<span style="font-size: 16px;font-weight:bold">' . $j . ". " . $issue_content['issues'] . '</span><br/>';
             $severity = '';
             switch ($issue_content['severity']) {
+                case '参':
+                    $severity = '<span style="color:black">参考</span>';
+                    break;
                 case '低':
                     $severity = '<span style="color:deepskyblue">低</span>';
                     break;
@@ -321,7 +325,7 @@ class Scan
             '<span style="font-size: 15px;color:red">' . '高：' . $issues_info['summary']['level_count']['high'] . "</span><br/>" .
             '<span style="font-size: 15px;color:orange">' . '中：' . $issues_info['summary']['level_count']['mid'] . "</span><br/>" .
             '<span style="font-size: 15px;color:deepskyblue">' . '低：' . $issues_info['summary']['level_count']['low'] . "</span><br/>" .
-            '<span style="font-size: 15px;color:deepskyblue">' . '参考：' . $issues_info['summary']['level_count']['info'] . "</span><br/>";
+            '<span style="font-size: 15px;color:black">' . '参考：' . $issues_info['summary']['level_count']['info'] . "</span><br/>";
         $content .= '<tr><td style="background-color:#efefef;' . $td_css . '">问题数量</td><td style="' . $td_css . '">' . $content_num . '</td></tr>';
         $content .= '</table>';
         $content .= "<br/><br/>";
@@ -371,6 +375,9 @@ class Scan
 
         foreach ($wvs_safe_info['content'] as $wvs_k => $wvs_v) {
             foreach ($appscan_safe_info['content'] as $app_k => $app_v) {
+                if (substr($wvs_v['issues'], -1) == '*') {
+                    $wvs_v['issues'] = substr($wvs_v['issues'], 0, -1);
+                }
                 //返回相似度
                 $similar_per = $lcs->getSimilar($wvs_v['issues'], $app_v['summary']);
                 if ($similar_per >= 0.6) {
@@ -386,6 +393,10 @@ class Scan
                             break;
                         case '低':
                             $wvs_safe_info['summary']['level_count']['low']--;
+                            $wvs_safe_info['summary']['level_count']['count']--;
+                            break;
+                        case '参':
+                            $wvs_safe_info['summary']['level_count']['info']--;
                             $wvs_safe_info['summary']['level_count']['count']--;
                             break;
                     }
@@ -420,7 +431,7 @@ class Scan
             '<span style="font-size: 15px;color:red">' . '高：' . ($wvs_safe_info['summary']['level_count']['high'] + $appscan_safe_info['summary']['level_count']['high']) . "</span><br/>" .
             '<span style="font-size: 15px;color:orange">' . '中：' . ($wvs_safe_info['summary']['level_count']['mid'] + $appscan_safe_info['summary']['level_count']['mid']) . "</span><br/>" .
             '<span style="font-size: 15px;color:deepskyblue">' . '低：' . ($wvs_safe_info['summary']['level_count']['low'] + $appscan_safe_info['summary']['level_count']['low']) . "</span><br/>" .
-            '<span style="font-size: 15px;color:black">' . '参考：' . $appscan_safe_info['summary']['level_count']['info'] . "</span><br/>";
+            '<span style="font-size: 15px;color:black">' . '参考：' . ($wvs_safe_info['summary']['level_count']['info'] + $appscan_safe_info['summary']['level_count']['info']) . "</span><br/>";
         $content .= '<tr><td style="background-color:#efefef;' . $td_css . '">问题数量</td><td style="' . $td_css . '">' . $content_num . '</td></tr>';
         $content .= '</table>';
         $content .= "<br/><br/>";
@@ -428,8 +439,8 @@ class Scan
         $content .= '<span style="font-size: 18px;font-weight:bold">安全问题汇总：</span><br/>';
         $content .= "<hr/>";
 
-        $tmp_wvs = $tmp_high = $tmp_mid = $tmp_low = $tmp_info =array();
-        foreach ($wvs_safe_info['content'] as $wvs_key => $wvs_issue){
+        $tmp_wvs = $tmp_high = $tmp_mid = $tmp_low = $tmp_info = array();
+        foreach ($wvs_safe_info['content'] as $wvs_key => $wvs_issue) {
             $tmp_wvs[$wvs_key]['summary'] = $wvs_issue['issues'];
             $tmp_wvs[$wvs_key]['level'] = $wvs_issue['severity'];
             $tmp_wvs[$wvs_key]['desc'] = $wvs_issue['desc_text'];
@@ -437,10 +448,10 @@ class Scan
             $tmp_wvs[$wvs_key]['risk'] = $wvs_issue['impact_text'];
             $tmp_wvs[$wvs_key]['suggestion'] = $wvs_issue['recm_text'];
         }
-        $issue_contents = array_merge($tmp_wvs,$appscan_safe_info['content']);
+        $issue_contents = array_merge($tmp_wvs, $appscan_safe_info['content']);
 
-        foreach ($issue_contents as $merge_key => $issue){
-            switch ($issue['level']){
+        foreach ($issue_contents as $merge_key => $issue) {
+            switch ($issue['level']) {
                 case '参':
                     $tmp_info[] = $issue;
                     break;
@@ -455,7 +466,7 @@ class Scan
                     break;
             }
         }
-        $issue_contents = array_merge($tmp_high,$tmp_mid,$tmp_low,$tmp_info);
+        $issue_contents = array_merge($tmp_high, $tmp_mid, $tmp_low, $tmp_info);
 
         for ($i = 1; $i <= count($issue_contents); $i++) {
             $content .= '<span style="font-size: 16px;font-weight:bold">' . $i . ". " . $issue_contents[$i - 1]['summary'] . '</span><br/>';
@@ -500,11 +511,11 @@ class Scan
         curl_setopt($ch, CURLOPT_HEADER, 0);
         $file_contents = curl_exec($ch);
         //翻译不成功，重试三次
-        if(!$file_contents){
+        if (!$file_contents) {
             $file_contents = curl_exec($ch);
-            if(!$file_contents){
+            if (!$file_contents) {
                 $file_contents = curl_exec($ch);
-                if(!$file_contents){
+                if (!$file_contents) {
                     $file_contents = curl_exec($ch);
                 }
             }

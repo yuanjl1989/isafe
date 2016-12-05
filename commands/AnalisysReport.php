@@ -116,7 +116,7 @@ class WVS
             }
 
             $summary_alerts = array_values($tmp_issue);
-            $summary['level_count']['count'] = $summary['level_count']['low'] = $summary['level_count']['mid'] = $summary['level_count']['high'] = 0;
+            $summary['level_count']['count'] = $summary['level_count']['info'] = $summary['level_count']['low'] = $summary['level_count']['mid'] = $summary['level_count']['high'] = 0;
 
             foreach ($summary_alerts as $k => $alert) {
                 $summary_alerts[$k]['impact_text'] = $this->queryWvsTexts($alert['impact_id'])[0]['content'];
@@ -126,6 +126,10 @@ class WVS
                 $summary_alerts[$k]['affects'] = implode(',',array_unique(explode(',',$summary_alerts[$k]['affects'])));
                 unset($summary_alerts[$k]['scid'], $summary_alerts[$k]['alid'], $summary_alerts[$k]['impact_id'], $summary_alerts[$k]['desc_id'], $summary_alerts[$k]['recm_id']);
                 switch ($alert['severity']) {
+                    case '0':
+                        $summary_alerts[$k]['severity'] = '参';
+                        $summary['level_count']['info']++;
+                        break;
                     case '1':
                         $summary_alerts[$k]['severity'] = '低';
                         $summary['level_count']['low']++;
@@ -154,7 +158,7 @@ class WVS
         $connstr = "DRIVER={Microsoft Access Driver (*.mdb)}; DBQ=" . "D:\\WVS10\\vulnscanresults.mdb";
         $conn->Open($connstr);
 
-        $query = "select scid,alid,algroup,affects,severity,impact_id,desc_id,recm_id from WVS_alerts where scid={$scid} and severity BETWEEN 1 and 3 ORDER by severity DESC ";
+        $query = "select scid,alid,algroup,affects,severity,impact_id,desc_id,recm_id from WVS_alerts where scid={$scid} and severity BETWEEN 0 and 3 ORDER by severity DESC ";
         $rs = $conn->Execute($query);
 
         $issues = array('scid', 'alid', 'issues', 'affects', 'severity', 'impact_id', 'desc_id', 'recm_id');
