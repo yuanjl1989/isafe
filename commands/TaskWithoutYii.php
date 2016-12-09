@@ -256,10 +256,10 @@ class Scan
                 $issues_info['content'][$key]['impact_text'] = $issue_content['impact_text'] = $issues_lib[0]['risk'];
                 $issues_info['content'][$key]['recm_text'] = $issue_content['recm_text'] = $issues_lib[0]['suggestion'];
             } else {
-                $issues_info['content'][$key]['issues'] = $issue_content['issues'] = $this->translateLongContent($issue_content['issues']) . '*';
-                $issues_info['content'][$key]['desc_text'] = $issue_content['desc_text'] = $this->translateLongContent($issue_content['desc_text']);
-                $issues_info['content'][$key]['impact_text'] = $issue_content['impact_text'] = $this->translateLongContent($issue_content['impact_text']);
-                $issues_info['content'][$key]['recm_text'] = $issue_content['recm_text'] = $this->translateLongContent($issue_content['recm_text']);
+                $issues_info['content'][$key]['issues'] = $issue_content['issues'] = $this->translateContentByGoogle($issue_content['issues']) . '*';
+                $issues_info['content'][$key]['desc_text'] = $issue_content['desc_text'] = $this->translateContentByGoogle($issue_content['desc_text']);
+                $issues_info['content'][$key]['impact_text'] = $issue_content['impact_text'] = $this->translateContentByGoogle($issue_content['impact_text']);
+                $issues_info['content'][$key]['recm_text'] = $issue_content['recm_text'] = $this->translateContentByGoogle($issue_content['recm_text']);
             }
 
             $content .= '<span style="font-size: 16px;font-weight:bold">' . $j . ". " . $issue_content['issues'] . '</span><br/>';
@@ -530,6 +530,7 @@ class Scan
 
     public function translateLongContent($content)
     {
+        $content = str_replace(array("\n","\r")," ",$content);
         if (!preg_match('/[\x{4e00}-\x{9fa5}]/u', $content)) {
             if (strlen($content) > 200) {
                 $ret = $translate_split = array();
@@ -548,6 +549,14 @@ class Scan
             $ret = $content;
         }
         return $ret;
+    }
+
+    public function translateContentByGoogle($content){
+        require_once 'Translate.php';
+        $translate = new GoogleTranslate();
+        $ret = $translate->translate('en', 'zh-CN', str_replace(array("\n","\r")," ",$content), 't?client=webapp', 'post');
+
+        return $ret?substr($ret,1,-1):$content;
     }
 }
 
