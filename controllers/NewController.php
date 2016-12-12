@@ -49,9 +49,6 @@ class NewController extends Controller
             }
         }
 
-        $model->is_mail = 1;
-        $model->tool = 1;
-
         return $this->render('new', [
             'model' => $model,
         ]);

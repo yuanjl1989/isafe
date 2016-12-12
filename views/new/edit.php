@@ -53,7 +53,7 @@ $this->params['breadcrumbs'][] = $this->title;
                     &nbsp;&nbsp;&nbsp;
                     <i class="icon_lightbulb" style="color: orange"></i><label style="color: red;font-size: small;font-weight: 100"> &nbsp;可留空，如需登录认证，请填写账号密码</label>
                     <?= $form->field($model, 'login_username')->textInput(['placeholder'=>'账号'])->label(false) ?>
-                    <?= $form->field($model, 'login_password')->passwordInput(['placeholder'=>'密码'])->label(false) ?>
+                    <?= $form->field($model, 'login_password')->textInput(['placeholder'=>'密码'])->label(false) ?>
                     <br/>
                 </div>
                 <div class="form-group">
