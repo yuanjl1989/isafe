@@ -56,21 +56,14 @@ class Scan
                 if ($v['tool'] == 1 || $v['tool'] == 0) {
                     //根据页面配置中填写的信息，拼接成扫描命令，--abortscanafter=60该参数作用为：扫描超过1个小时则终止，避免出现假死
                     $command_main = "{$wvs_console} /Scan {$v['url']} /Profile {$scan_profile[$v['profile']]} /Save /GenerateReport /ReportFormat PDF /SaveFolder {$report_path}";
-                    $command_mail = " /EmailAddress {$safe_info_ext['user_mail']}";
                     $command_auth = " --HtmlAuthUser={$v['login_username']} --HtmlAuthPass={$v['login_password']}";
                     $command_ext = " --ScanningMode={$scan_mode[$v['mode']]} --abortscanafter=60 >{$report_path}\\wvs_log.log";
+                    $command = $command_main . $command_ext;
 
                     if (!empty($v['login_username']) && !empty($v['login_password'])) {
-                        $command = $command_main . $command_mail . $command_auth . $command_ext;
-                        if ($v['is_mail'] == 2) {
-                            $command = $command_main . $command_auth . $command_ext;
-                        }
-                    } else {
-                        $command = $command_main . $command_mail . $command_ext;
-                        if ($v['is_mail'] == 2) {
-                            $command = $command_main . $command_ext;
-                        }
+                        $command = $command_main . $command_auth . $command_ext;
                     }
+
                     if ($v['tool'] == 0) {
                         $command_wvs = $command;
                     }
@@ -158,7 +151,7 @@ class Scan
             $mail->Body = $content;
             $mail->AltBody = "To view the message, please use an HTML compatible email viewer!"; //当邮件不支持html时备用显示，可以省略
 //            $mail->WordWrap = 80; // 设置每行字符串的长度
-            $mail->AddAttachment($report_path); //可以添加附件
+            //$mail->AddAttachment($report_path); //可以添加附件
             $mail->IsHTML(true);
             $mail->Send();
             echo 'send success';
