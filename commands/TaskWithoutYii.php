@@ -366,35 +366,37 @@ class Scan
         require_once 'LCS.php';
         $lcs = new LCS();
 
-        foreach ($wvs_safe_info['content'] as $wvs_k => $wvs_v) {
-            foreach ($appscan_safe_info['content'] as $app_k => $app_v) {
-                if (substr($wvs_v['issues'], -1) == '*') {
-                    $wvs_v['issues'] = substr($wvs_v['issues'], 0, -1);
-                }
-                //返回相似度
-                $similar_per = $lcs->getSimilar($wvs_v['issues'], $app_v['summary']);
-                if ($similar_per >= 0.6) {
-                    var_dump($wvs_v['issues'] . '-------' . $app_v['summary'] . '------------' . $similar_per . "\n\n\n");
-                    switch ($wvs_safe_info['content'][$wvs_k]['severity']) {
-                        case '高':
-                            $wvs_safe_info['summary']['level_count']['high']--;
-                            $wvs_safe_info['summary']['level_count']['count']--;
-                            break;
-                        case '中':
-                            $wvs_safe_info['summary']['level_count']['mid']--;
-                            $wvs_safe_info['summary']['level_count']['count']--;
-                            break;
-                        case '低':
-                            $wvs_safe_info['summary']['level_count']['low']--;
-                            $wvs_safe_info['summary']['level_count']['count']--;
-                            break;
-                        case '参':
-                            $wvs_safe_info['summary']['level_count']['info']--;
-                            $wvs_safe_info['summary']['level_count']['count']--;
-                            break;
+        if (!empty($wvs_safe_info['content']) && !empty($appscan_safe_info['content'])) {
+            foreach ($wvs_safe_info['content'] as $wvs_k => $wvs_v) {
+                foreach ($appscan_safe_info['content'] as $app_k => $app_v) {
+                    if (substr($wvs_v['issues'], -1) == '*') {
+                        $wvs_v['issues'] = substr($wvs_v['issues'], 0, -1);
                     }
-                    unset($wvs_safe_info['content'][$wvs_k]);
-                    break;
+                    //返回相似度
+                    $similar_per = $lcs->getSimilar($wvs_v['issues'], $app_v['summary']);
+                    if ($similar_per >= 0.6) {
+                        var_dump($wvs_v['issues'] . '-------' . $app_v['summary'] . '------------' . $similar_per . "\n\n\n");
+                        switch ($wvs_safe_info['content'][$wvs_k]['severity']) {
+                            case '高':
+                                $wvs_safe_info['summary']['level_count']['high']--;
+                                $wvs_safe_info['summary']['level_count']['count']--;
+                                break;
+                            case '中':
+                                $wvs_safe_info['summary']['level_count']['mid']--;
+                                $wvs_safe_info['summary']['level_count']['count']--;
+                                break;
+                            case '低':
+                                $wvs_safe_info['summary']['level_count']['low']--;
+                                $wvs_safe_info['summary']['level_count']['count']--;
+                                break;
+                            case '参':
+                                $wvs_safe_info['summary']['level_count']['info']--;
+                                $wvs_safe_info['summary']['level_count']['count']--;
+                                break;
+                        }
+                        unset($wvs_safe_info['content'][$wvs_k]);
+                        break;
+                    }
                 }
             }
         }
@@ -441,7 +443,7 @@ class Scan
             $tmp_wvs[$wvs_key]['risk'] = $wvs_issue['impact_text'];
             $tmp_wvs[$wvs_key]['suggestion'] = $wvs_issue['recm_text'];
         }
-        $issue_contents = array_merge($tmp_wvs, $appscan_safe_info['content']);
+        $issue_contents = !empty($appscan_safe_info['content'])?array_merge($tmp_wvs, $appscan_safe_info['content']):$tmp_wvs;
 
         foreach ($issue_contents as $merge_key => $issue) {
             switch ($issue['level']) {
@@ -523,7 +525,7 @@ class Scan
 
     public function translateLongContent($content)
     {
-        $content = str_replace(array("\n","\r")," ",$content);
+        $content = str_replace(array("\n", "\r"), " ", $content);
         if (!preg_match('/[\x{4e00}-\x{9fa5}]/u', $content)) {
             if (strlen($content) > 200) {
                 $ret = $translate_split = array();
@@ -544,12 +546,13 @@ class Scan
         return $ret;
     }
 
-    public function translateContentByGoogle($content){
+    public function translateContentByGoogle($content)
+    {
         require_once 'Translate.php';
         $translate = new GoogleTranslate();
-        $ret = $translate->translate('en', 'zh-CN', str_replace(array("\n","\r")," ",$content), 't?client=webapp', 'post');
+        $ret = $translate->translate('en', 'zh-CN', str_replace(array("\n", "\r"), " ", $content), 't?client=webapp', 'post');
 
-        return $ret?substr($ret,1,-1):$content;
+        return $ret ? substr($ret, 1, -1) : $content;
     }
 }
 
