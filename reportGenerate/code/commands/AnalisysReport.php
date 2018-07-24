@@ -10,7 +10,7 @@ class AppScan
 {
     public function getAppScanIssue($id)
     {
-        $report_path = 'E:\\yii\\web\\scanreport\\result_' . $id . '\\';
+        $report_path = 'D:\\mb_safe\\code\\scanreport\\result_' . $id . '\\';
 
         $content = file_get_contents($report_path . 'report_appscan_init.html');//
 
@@ -116,7 +116,7 @@ class WVS
             }
 
             $summary_alerts = array_values($tmp_issue);
-            $summary['level_count']['count'] = $summary['level_count']['info'] = $summary['level_count']['low'] = $summary['level_count']['mid'] = $summary['level_count']['high'] = 0;
+			$summary['level_count']['count'] = $summary['level_count']['info'] = $summary['level_count']['low'] = $summary['level_count']['mid'] = $summary['level_count']['high'] = 0;
 
             foreach ($summary_alerts as $k => $alert) {
                 $summary_alerts[$k]['impact_text'] = $this->queryWvsTexts($alert['impact_id'])[0]['content'];
@@ -126,7 +126,7 @@ class WVS
                 $summary_alerts[$k]['affects'] = implode(',',array_unique(explode(',',$summary_alerts[$k]['affects'])));
                 unset($summary_alerts[$k]['scid'], $summary_alerts[$k]['alid'], $summary_alerts[$k]['impact_id'], $summary_alerts[$k]['desc_id'], $summary_alerts[$k]['recm_id']);
                 switch ($alert['severity']) {
-                    case '0':
+					case '0':
                         $summary_alerts[$k]['severity'] = '参';
                         $summary['level_count']['info']++;
                         break;
@@ -155,7 +155,7 @@ class WVS
     public function queryWvsAlerts($scid)
     {
         $conn = new COM("ADODB.Connection");
-        $connstr = "DRIVER={Microsoft Access Driver (*.mdb)}; DBQ=" . "D:\\WVS10\\vulnscanresults.mdb";
+        $connstr = "DRIVER={Microsoft Access Driver (*.mdb)}; DBQ=" . "D:\\mb_safe\\tools\\wvs\\vulnscanresults.mdb";
         $conn->Open($connstr);
 
         $query = "select scid,alid,algroup,affects,severity,impact_id,desc_id,recm_id from WVS_alerts where scid={$scid} and severity BETWEEN 0 and 3 ORDER by severity DESC ";
@@ -179,7 +179,7 @@ class WVS
     public function queryWvsTexts($text_id)
     {
         $conn = new COM("ADODB.Connection");
-        $connstr = "DRIVER={Microsoft Access Driver (*.mdb)}; DBQ=" . "D:\\WVS10\\vulnscanresults.mdb";
+        $connstr = "DRIVER={Microsoft Access Driver (*.mdb)}; DBQ=" . "D:\\mb_safe\\tools\\wvs\\vulnscanresults.mdb";
         $conn->Open($connstr);
 
         $query = "select content from WVS_texts where text_id={$text_id}";
@@ -203,7 +203,7 @@ class WVS
     public function queryAlerts2Refs($scid, $alid)
     {
         $conn = new COM("ADODB.Connection");
-        $connstr = "DRIVER={Microsoft Access Driver (*.mdb)}; DBQ=" . "D:\\WVS10\\vulnscanresults.mdb";
+        $connstr = "DRIVER={Microsoft Access Driver (*.mdb)}; DBQ=" . "D:\\mb_safe\\tools\\wvs\\vulnscanresults.mdb";
         $conn->Open($connstr);
 
         $query = "select b.title,b.url from WVS_alerts2refs_XREF a,WVS_refs b where a.refid=b.refid and a.scid={$scid} and a.alid={$alid}";
@@ -227,7 +227,7 @@ class WVS
     public function queryWvsScans($url)
     {
         $conn = new COM("ADODB.Connection");
-        $connstr = "DRIVER={Microsoft Access Driver (*.mdb)}; DBQ=" . "D:\\WVS10\\vulnscanresults.mdb";
+        $connstr = "DRIVER={Microsoft Access Driver (*.mdb)}; DBQ=" . "D:\\mb_safe\\tools\\wvs\\vulnscanresults.mdb";
         $conn->Open($connstr);
 
         $query = "select top 1 a.scid,a.starturl,a.starttime,a.finishtime,b.banner,b.os,b.technologies from WVS_scans a,WVS_servers b where a.starturl='" . $url . "' and a.serverid=b.serverid order by a.starttime desc";
